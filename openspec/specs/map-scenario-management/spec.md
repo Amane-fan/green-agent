@@ -7,15 +7,23 @@ Define map-based scenario creation, graph validation, random generation, categor
 ## Requirements
 
 ### Requirement: Custom map scenario editing
-The system SHALL allow users to create and edit a map scenario with garbage bins, collection vehicles, processing facilities, and undirected weighted edges on a React Leaflet map.
+The system SHALL allow users to create and edit a map scenario with garbage bins, collection vehicles, processing facilities, and undirected weighted edges on a React Leaflet map, including choosing custom node coordinates by clicking the map.
 
 #### Scenario: Create custom map elements
-- **WHEN** the user adds garbage bins, vehicles, facilities, and edges on the map
-- **THEN** the system stores each node with a stable id, type, coordinates, and type-specific attributes, and stores each edge with two endpoint ids and a positive weight
+- **WHEN** the user selects a garbage bin, vehicle, or processing facility to add and then clicks a map location
+- **THEN** the system stores the new node with a stable id, selected type, clicked coordinates, and type-specific attributes
 
 #### Scenario: Edit existing edge weight
 - **WHEN** the user changes the weight of an existing edge
 - **THEN** the system updates the graph model and uses the new weight for validation and route planning
+
+#### Scenario: Pending node placement
+- **WHEN** the user selects a custom node type before clicking the map
+- **THEN** the frontend indicates that the next map click will place that node type
+
+#### Scenario: Complete node placement
+- **WHEN** the user clicks the map while a custom node type is pending placement
+- **THEN** the frontend creates the node at the clicked latitude and longitude and clears the pending placement state
 
 ### Requirement: Graph validity constraints
 The system MUST validate that a scenario graph is undirected, connected, and contains only positive edge weights before route planning.
