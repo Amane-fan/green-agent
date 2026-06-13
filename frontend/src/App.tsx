@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CircleMarker, MapContainer, Polyline, Popup } from 'react-leaflet';
+import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import {
@@ -13,12 +13,15 @@ import type {
   Edge,
   PlanningResult,
   ProcessingFacility,
+  RouteStop,
   Scenario,
   ScenarioNode,
   Vehicle,
   VehicleRoute,
 } from './types';
 import './styles.css';
+
+const CARBON_KG_PER_LITER = 2.31;
 
 const CATEGORY_LABELS = {
   kitchen: '厨余',
@@ -35,10 +38,27 @@ const CATEGORY_COLORS = {
 };
 
 type LatLng = [number, number];
+type CustomNodeType = 'bin' | 'vehicle' | 'facility';
 
-interface RenderedRoute {
+const CUSTOM_NODE_LABELS: Record<CustomNodeType, string> = {
+  bin: '垃圾桶',
+  vehicle: '车辆',
+  facility: '处理厂',
+};
+
+interface RenderedRouteSegment {
   route: VehicleRoute;
+  index: number;
+  sourceId: string;
+  targetId: string;
   positions: LatLng[];
+  distanceKm: number;
+  fuelPerKm?: number;
+}
+
+interface SelectedRouteTaskContext {
+  collectionOrderByNodeId: Map<string, number>;
+  startNodeId: string | null;
 }
 
 function nodeLatLng(node: ScenarioNode): [number, number] {
@@ -55,10 +75,58 @@ function routeNodes(scenario: Scenario, route: VehicleRoute): ScenarioNode[] {
     .filter((node): node is ScenarioNode => Boolean(node));
 }
 
+function selectedVehicle(scenario: Scenario, route: VehicleRoute | null): Vehicle | undefined {
+  if (!route) {
+    return undefined;
+  }
+  return scenario.vehicles.find((vehicle) => vehicle.id === route.vehicle_id);
+}
+
+function selectedVehicleStartNode(
+  scenario: Scenario,
+  route: VehicleRoute | null,
+): ScenarioNode | undefined {
+  const vehicle = selectedVehicle(scenario, route);
+  return vehicle ? findNode(scenario, vehicle.node_id) : undefined;
+}
+
+function orderedRouteStops(route: VehicleRoute): RouteStop[] {
+  return [...route.stops].sort((left, right) => left.order - right.order);
+}
+
+function selectedRouteTaskContext(
+  scenario: Scenario | null,
+  selectedRoute: VehicleRoute | null,
+): SelectedRouteTaskContext {
+  if (!scenario || !selectedRoute) {
+    return { collectionOrderByNodeId: new Map(), startNodeId: null };
+  }
+
+  const collectionOrderByNodeId = new Map<string, number>();
+  for (const stop of orderedRouteStops(selectedRoute)) {
+    if (stop.node_type === 'bin' && !collectionOrderByNodeId.has(stop.node_id)) {
+      collectionOrderByNodeId.set(stop.node_id, collectionOrderByNodeId.size + 1);
+    }
+  }
+
+  return {
+    collectionOrderByNodeId,
+    startNodeId: selectedVehicleStartNode(scenario, selectedRoute)?.id ?? null,
+  };
+}
+
 function edgePositions(scenario: Scenario, edge: Edge): [number, number][] {
   const source = findNode(scenario, edge.source);
   const target = findNode(scenario, edge.target);
   return source && target ? [nodeLatLng(source), nodeLatLng(target)] : [];
+}
+
+function matchingEdge(scenario: Scenario, sourceId: string, targetId: string): Edge | undefined {
+  return scenario.edges.find(
+    (edge) =>
+      (edge.source === sourceId && edge.target === targetId) ||
+      (edge.source === targetId && edge.target === sourceId),
+  );
 }
 
 function routeSegmentKey(sourceId: string, targetId: string): string {
@@ -101,7 +169,15 @@ function curvedSegmentPositions(source: ScenarioNode, target: ScenarioNode, offs
   });
 }
 
-function renderedRoutes(scenario: Scenario, routes: VehicleRoute[]): RenderedRoute[] {
+function approximateDistanceKm(source: ScenarioNode, target: ScenarioNode): number {
+  const latDistanceKm = (target.lat - source.lat) * 111.32;
+  const lngDistanceKm =
+    (target.lng - source.lng) * 111.32 * Math.cos(((source.lat + target.lat) / 2) * (Math.PI / 180));
+
+  return Math.hypot(latDistanceKm, lngDistanceKm);
+}
+
+function routeSegmentGroups(routes: VehicleRoute[]) {
   const segmentGroups = new Map<string, Array<{ routeId: string; sourceId: string; targetId: string }>>();
 
   for (const route of routes) {
@@ -116,34 +192,69 @@ function renderedRoutes(scenario: Scenario, routes: VehicleRoute[]): RenderedRou
     }
   }
 
-  return routes.map((route) => {
-    const nodes = routeNodes(scenario, route);
-    const positions = nodes.flatMap((source, index) => {
-      const target = nodes[index + 1];
-      if (!target) {
-        return index === 0 ? [nodeLatLng(source)] : [];
-      }
+  return segmentGroups;
+}
 
-      const group = segmentGroups.get(routeSegmentKey(source.id, target.id)) ?? [];
-      const segmentIndex = Math.max(
-        group.findIndex(
-          (segment) =>
-            segment.routeId === route.vehicle_id &&
-            segment.sourceId === source.id &&
-            segment.targetId === target.id,
-        ),
-        0,
-      );
-      const segmentPositions = curvedSegmentPositions(
-        source,
-        target,
-        routeOffset(segmentIndex, group.length),
-      );
-      return index === 0 ? segmentPositions : segmentPositions.slice(1);
-    });
+function renderedRouteSegments(
+  scenario: Scenario,
+  routes: VehicleRoute[],
+  selectedRoute: VehicleRoute | null,
+): RenderedRouteSegment[] {
+  if (!selectedRoute) {
+    return [];
+  }
 
-    return { route, positions };
+  const vehicle = scenario.vehicles.find((candidate) => candidate.id === selectedRoute.vehicle_id);
+  const segmentGroups = routeSegmentGroups(routes);
+
+  return selectedRoute.path_node_ids.flatMap((sourceId, index) => {
+    const targetId = selectedRoute.path_node_ids[index + 1];
+    if (!targetId) {
+      return [];
+    }
+
+    const source = findNode(scenario, sourceId);
+    const target = findNode(scenario, targetId);
+    if (!source || !target) {
+      return [];
+    }
+
+    const group = segmentGroups.get(routeSegmentKey(source.id, target.id)) ?? [];
+    const segmentIndex = Math.max(
+      group.findIndex(
+        (segment) =>
+          segment.routeId === selectedRoute.vehicle_id &&
+          segment.sourceId === source.id &&
+          segment.targetId === target.id,
+      ),
+      0,
+    );
+    const graphEdge = matchingEdge(scenario, sourceId, targetId);
+
+    return {
+      route: selectedRoute,
+      index,
+      sourceId,
+      targetId,
+      positions: curvedSegmentPositions(source, target, routeOffset(segmentIndex, group.length)),
+      distanceKm: graphEdge?.weight ?? approximateDistanceKm(source, target),
+      fuelPerKm: vehicle?.fuel_per_km,
+    };
   });
+}
+
+function MapClickHandler({
+  onMapClick,
+}: {
+  onMapClick: (latlng: { lat: number; lng: number }) => void;
+}) {
+  useMapEvents({
+    click(event) {
+      onMapClick(event.latlng);
+    },
+  });
+
+  return null;
 }
 
 function markerColor(node: ScenarioNode): string {
@@ -163,6 +274,35 @@ function markerColor(node: ScenarioNode): string {
   return base;
 }
 
+function markerStyle(
+  node: ScenarioNode,
+  selectedRoute: VehicleRoute | null,
+  taskContext: SelectedRouteTaskContext,
+) {
+  const routeColor = selectedRoute?.color;
+  const isSelectedStart = Boolean(routeColor && node.id === taskContext.startNodeId);
+  const collectionOrder = taskContext.collectionOrderByNodeId.get(node.id);
+  const isSelectedCollection = Boolean(routeColor && collectionOrder);
+
+  return {
+    className: isSelectedStart
+      ? 'selected-route-start-marker'
+      : isSelectedCollection
+        ? 'selected-route-task-marker'
+        : undefined,
+    color: isSelectedStart || isSelectedCollection ? routeColor : '#0f172a',
+    fillColor: markerColor(node),
+    fillOpacity: 0.92,
+    radius: isSelectedStart ? 12 : isSelectedCollection ? 11 : node.type === 'bin' ? 7 : 9,
+    weight: isSelectedStart || isSelectedCollection ? 4 : 1,
+    collectionOrder,
+  };
+}
+
+function routeFacilityStop(route: VehicleRoute): RouteStop | undefined {
+  return orderedRouteStops(route).find((stop) => stop.node_type === 'facility');
+}
+
 export default function App() {
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [plan, setPlan] = useState<PlanningResult | null>(null);
@@ -173,6 +313,8 @@ export default function App() {
   const [edgeWeight, setEdgeWeight] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [pendingNodeType, setPendingNodeType] = useState<CustomNodeType | null>(null);
 
   useEffect(() => {
     loadCurrentScenario()
@@ -181,6 +323,10 @@ export default function App() {
         // 初始场景加载失败时允许用户通过随机生成继续演示。
       });
   }, []);
+
+  useEffect(() => {
+    setSelectedRouteId(plan?.routes[0]?.vehicle_id ?? null);
+  }, [plan]);
 
   const center = useMemo<[number, number]>(() => {
     if (!scenario?.nodes.length) {
@@ -194,7 +340,11 @@ export default function App() {
   const bins = scenario?.nodes.filter((node) => node.type === 'bin') ?? [];
   const vehicles = scenario?.vehicles ?? [];
   const facilities = scenario?.facilities ?? [];
-  const routesToRender = scenario && plan ? renderedRoutes(scenario, plan.routes) : [];
+  const selectedRoute =
+    plan?.routes.find((route) => route.vehicle_id === selectedRouteId) ?? plan?.routes[0] ?? null;
+  const selectedTaskContext = selectedRouteTaskContext(scenario, selectedRoute);
+  const routeSegmentsToRender =
+    scenario && plan ? renderedRouteSegments(scenario, plan.routes, selectedRoute) : [];
 
   async function runAction(action: () => Promise<void>) {
     setLoading(true);
@@ -223,23 +373,19 @@ export default function App() {
     );
   }
 
-  function nextCoordinate(offset: number): { lat: number; lng: number } {
-    return {
-      lat: Number((center[0] + offset * 0.002).toFixed(6)),
-      lng: Number((center[1] + offset * 0.002).toFixed(6)),
-    };
-  }
-
   async function persistScenario(next: Scenario) {
     const saved = await saveScenario(next);
     setScenario(saved);
     setPlan(null);
+    setSelectedRouteId(null);
   }
 
-  async function addCustomNode(type: 'bin' | 'vehicle' | 'facility') {
+  async function addCustomNode(type: CustomNodeType, coordinate: { lat: number; lng: number }) {
     const current = baseScenario();
-    const offset = current.nodes.length + 1;
-    const coordinate = nextCoordinate(offset);
+    const roundedCoordinate = {
+      lat: Number(coordinate.lat.toFixed(6)),
+      lng: Number(coordinate.lng.toFixed(6)),
+    };
     const nodes = [...current.nodes];
     const vehiclesToSave: Vehicle[] = [...current.vehicles];
     const facilitiesToSave: ProcessingFacility[] = [...current.facilities];
@@ -248,7 +394,7 @@ export default function App() {
       nodes.push({
         id: `bin-custom-${current.nodes.filter((node) => node.type === 'bin').length + 1}`,
         type: 'bin',
-        ...coordinate,
+        ...roundedCoordinate,
         waste_type: 'kitchen',
         fill_rate: 60,
         capacity: 10,
@@ -257,7 +403,7 @@ export default function App() {
     } else if (type === 'vehicle') {
       const vehicleIndex = vehiclesToSave.length + 1;
       const nodeId = `vehicle-node-custom-${vehicleIndex}`;
-      nodes.push({ id: nodeId, type: 'vehicle', ...coordinate });
+      nodes.push({ id: nodeId, type: 'vehicle', ...roundedCoordinate });
       vehiclesToSave.push({
         id: `vehicle-custom-${vehicleIndex}`,
         node_id: nodeId,
@@ -269,7 +415,7 @@ export default function App() {
     } else {
       const facilityIndex = facilitiesToSave.length + 1;
       const nodeId = `facility-node-custom-${facilityIndex}`;
-      nodes.push({ id: nodeId, type: 'facility', ...coordinate });
+      nodes.push({ id: nodeId, type: 'facility', ...roundedCoordinate });
       facilitiesToSave.push({
         id: `facility-custom-${facilityIndex}`,
         node_id: nodeId,
@@ -283,6 +429,18 @@ export default function App() {
       nodes,
       vehicles: vehiclesToSave,
       facilities: facilitiesToSave,
+    });
+  }
+
+  function handleMapClick(latlng: { lat: number; lng: number }) {
+    if (!pendingNodeType) {
+      return;
+    }
+
+    const nodeType = pendingNodeType;
+    runAction(async () => {
+      await addCustomNode(nodeType, latlng);
+      setPendingNodeType(null);
     });
   }
 
@@ -345,6 +503,8 @@ export default function App() {
                 const next = await generateRandomScenario(seed);
                 setScenario(next);
                 setPlan(null);
+                setSelectedRouteId(null);
+                setPendingNodeType(null);
               })
             }
           >
@@ -357,6 +517,8 @@ export default function App() {
               runAction(async () => {
                 const next = await advanceSimulationTime(1);
                 setScenario(next);
+                setPlan(null);
+                setSelectedRouteId(null);
               })
             }
           >
@@ -379,24 +541,27 @@ export default function App() {
             <button
               type="button"
               disabled={loading}
-              onClick={() => runAction(() => addCustomNode('bin'))}
+              onClick={() => setPendingNodeType('bin')}
             >
               添加垃圾桶
             </button>
             <button
               type="button"
               disabled={loading}
-              onClick={() => runAction(() => addCustomNode('vehicle'))}
+              onClick={() => setPendingNodeType('vehicle')}
             >
               添加车辆
             </button>
             <button
               type="button"
               disabled={loading}
-              onClick={() => runAction(() => addCustomNode('facility'))}
+              onClick={() => setPendingNodeType('facility')}
             >
               添加处理厂
             </button>
+            {pendingNodeType && (
+              <p className="placement-hint">点击地图放置{CUSTOM_NODE_LABELS[pendingNodeType]}</p>
+            )}
             <select
               aria-label="边起点"
               value={edgeSource}
@@ -445,43 +610,92 @@ export default function App() {
 
         <section className="map-card" aria-label="路线地图">
           <MapContainer center={center} zoom={13} className="leaflet-stage" scrollWheelZoom>
+            <TileLayer
+              attribution="&copy; OpenStreetMap contributors"
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <MapClickHandler onMapClick={handleMapClick} />
             {scenario?.edges.map((edge) => (
               <Polyline
                 key={`${edge.source}-${edge.target}`}
                 positions={edgePositions(scenario, edge)}
                 pathOptions={{ color: '#64748b', weight: 1.5, opacity: 0.5 }}
               >
-                <Popup>{edge.weight.toFixed(2)} km</Popup>
+                <Popup>长度: {edge.weight.toFixed(2)} km</Popup>
               </Polyline>
             ))}
-            {scenario?.nodes.map((node) => (
-              <CircleMarker
-                key={node.id}
-                center={nodeLatLng(node)}
-                radius={node.type === 'bin' ? 7 : 9}
-                pathOptions={{
-                  color: '#0f172a',
-                  fillColor: markerColor(node),
-                  fillOpacity: 0.92,
-                  weight: 1,
-                }}
-              >
-                <Popup>
-                  <strong>{node.id}</strong>
-                  <br />
-                  {node.type}
-                  {node.waste_type ? ` / ${CATEGORY_LABELS[node.waste_type]}` : ''}
-                  {typeof node.fill_rate === 'number' ? ` / ${node.fill_rate.toFixed(0)}%` : ''}
-                </Popup>
-              </CircleMarker>
-            ))}
-            {routesToRender.map(({ route, positions }) => (
+            {scenario?.nodes.map((node) => {
+              const style = markerStyle(node, selectedRoute, selectedTaskContext);
+
+              return (
+                <CircleMarker
+                  key={node.id}
+                  center={nodeLatLng(node)}
+                  radius={style.radius}
+                  pathOptions={{
+                    className: style.className,
+                    color: style.color,
+                    fillColor: style.fillColor,
+                    fillOpacity: style.fillOpacity,
+                    weight: style.weight,
+                  }}
+                >
+                  <Popup>
+                    <strong>{node.id}</strong>
+                    <br />
+                    {node.type}
+                    {node.waste_type ? ` / ${CATEGORY_LABELS[node.waste_type]}` : ''}
+                    {typeof node.fill_rate === 'number' ? ` / ${node.fill_rate.toFixed(0)}%` : ''}
+                    {node.id === selectedTaskContext.startNodeId && (
+                      <>
+                        <br />
+                        车辆起点
+                      </>
+                    )}
+                    {style.collectionOrder && (
+                      <>
+                        <br />
+                        回收顺序: {style.collectionOrder}
+                      </>
+                    )}
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
+            {routeSegmentsToRender.map((segment) => {
+              const segmentFuel =
+                typeof segment.fuelPerKm === 'number'
+                  ? segment.distanceKm * segment.fuelPerKm
+                  : null;
+
+              return (
                 <Polyline
-                  key={route.vehicle_id}
-                  positions={positions}
-                  pathOptions={{ color: route.color, weight: 5, opacity: 0.9 }}
-                />
-              ))}
+                  key={`${segment.route.vehicle_id}-${segment.index}-${segment.sourceId}-${segment.targetId}`}
+                  positions={segment.positions}
+                  pathOptions={{
+                    className: 'selected-route-segment',
+                    color: segment.route.color,
+                    weight: 5,
+                    opacity: 0.9,
+                  }}
+                >
+                  <Popup>
+                    <strong>路段长度: {segment.distanceKm.toFixed(2)} km</strong>
+                    {segmentFuel !== null && typeof segment.fuelPerKm === 'number' && (
+                      <>
+                        <br />
+                        车辆燃油率: {segment.fuelPerKm.toFixed(2)} L/km
+                        <br />
+                        预计路段燃油: {segmentFuel.toFixed(2)} L
+                        <br />
+                        预计路段碳排放:{' '}
+                        {(segmentFuel * CARBON_KG_PER_LITER).toFixed(2)} kg
+                      </>
+                    )}
+                  </Popup>
+                </Polyline>
+              );
+            })}
           </MapContainer>
         </section>
 
@@ -495,14 +709,51 @@ export default function App() {
                 <span>碳排放: {plan.estimated_carbon.toFixed(2)} kg</span>
               </div>
               <div className="route-list">
-                {plan.routes.map((route) => (
-                  <article key={route.vehicle_id} className="route-card">
-                    <span className="route-swatch" style={{ background: route.color }} />
-                    <h3>{route.vehicle_id}</h3>
-                    <p>{route.stops.map((stop) => stop.node_id).join(' -> ')}</p>
-                    <small>{route.distance.toFixed(2)} km</small>
-                  </article>
-                ))}
+                {plan.routes.map((route) => {
+                  const routeStartNode =
+                    scenario && selectedVehicleStartNode(scenario, route);
+                  const collectionStops = orderedRouteStops(route).filter(
+                    (stop) => stop.node_type === 'bin',
+                  );
+                  const facilityStop = routeFacilityStop(route);
+
+                  return (
+                    <button
+                      key={route.vehicle_id}
+                      type="button"
+                      className={`route-card ${
+                        selectedRoute?.vehicle_id === route.vehicle_id ? 'route-card-selected' : ''
+                      }`}
+                      aria-label={`选择路线 ${route.vehicle_id}`}
+                      aria-pressed={selectedRoute?.vehicle_id === route.vehicle_id}
+                      onClick={() => setSelectedRouteId(route.vehicle_id)}
+                    >
+                      <span className="route-swatch" style={{ background: route.color }} />
+                      <span className="route-title">{route.vehicle_id}</span>
+                      <span className="route-task-chain">
+                        {routeStartNode && (
+                          <span className="route-task route-task-start">
+                            起点 {routeStartNode.id}
+                          </span>
+                        )}
+                        {collectionStops.map((stop, index) => (
+                          <span key={`${route.vehicle_id}-${stop.node_id}-${stop.order}`} className="route-task route-task-bin">
+                            {index + 1} 回收 {stop.node_id}
+                            {typeof stop.fill_rate === 'number'
+                              ? ` · ${stop.fill_rate.toFixed(0)}%`
+                              : ''}
+                          </span>
+                        ))}
+                        {facilityStop && (
+                          <span className="route-task route-task-facility">
+                            终点 {facilityStop.node_id}
+                          </span>
+                        )}
+                      </span>
+                      <small>{route.distance.toFixed(2)} km</small>
+                    </button>
+                  );
+                })}
               </div>
               {plan.unassigned_tasks.length > 0 && (
                 <div className="warning-box">

@@ -173,6 +173,16 @@ button:disabled {
   color: #bbf7d0;
 }
 
+.placement-hint {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(134, 239, 172, 0.32);
+  border-radius: 14px;
+  color: #dcfce7;
+  background: rgba(20, 83, 45, 0.32);
+  font-size: 13px;
+}
+
 .metric-grid {
   grid-template-columns: 1fr 1fr;
   margin-top: 8px;
@@ -222,22 +232,79 @@ button:disabled {
 
 .route-card {
   position: relative;
+  width: 100%;
   padding: 14px 14px 14px 42px;
+  color: #d1fae5;
+  text-align: left;
+  background: rgba(2, 6, 23, 0.52);
+  cursor: pointer;
+  font-weight: 400;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
-.route-card h3 {
+.route-card:hover,
+.route-card:focus-visible {
+  border-color: rgba(134, 239, 172, 0.52);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
+  outline: none;
+}
+
+.route-card-selected {
+  border-color: rgba(134, 239, 172, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(187, 247, 208, 0.28),
+    0 16px 36px rgba(34, 197, 94, 0.12);
+}
+
+.route-title {
+  display: block;
   margin-bottom: 6px;
   color: #f8fafc;
-}
-
-.route-card p {
-  margin-bottom: 8px;
-  color: #bbf7d0;
-  word-break: break-word;
+  font-size: 1.17em;
+  font-weight: 700;
 }
 
 .route-card small {
   color: #94a3b8;
+}
+
+.route-task-chain {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0;
+}
+
+.route-task {
+  display: block;
+  padding: 7px 9px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  color: #d1fae5;
+  background: rgba(15, 23, 42, 0.58);
+  font-size: 13px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.route-task-start {
+  color: #f8fafc;
+  border-color: rgba(226, 232, 240, 0.24);
+  background: rgba(51, 65, 85, 0.52);
+}
+
+.route-task-bin {
+  color: #fef08a;
+  border-color: rgba(250, 204, 21, 0.28);
+  background: rgba(113, 63, 18, 0.34);
+}
+
+.route-task-facility {
+  color: #ddd6fe;
+  border-color: rgba(167, 139, 250, 0.28);
+  background: rgba(49, 46, 129, 0.34);
 }
 
 .route-swatch {
