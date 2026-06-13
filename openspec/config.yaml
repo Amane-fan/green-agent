@@ -1,5 +1,15 @@
 schema: spec-driven
 
+context: |
+  语言：中文（简体）
+  所有 OpenSpec 产出物必须用简体中文撰写，包括 proposal.md、design.md、tasks.md、spec.md 中的需求说明和场景描述。
+
+  但以下内容保持英文，不要翻译：
+  - 文件名、目录名、change-id、capability-id
+  - 代码、命令、API 名称、配置键名
+  - OpenSpec 结构性标题和关键字，例如 ADDED Requirements、MODIFIED Requirements、REMOVED Requirements、Requirement、Scenario
+  - EARS/Gherkin 风格关键字，例如 GIVEN、WHEN、THEN、AND
+
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
