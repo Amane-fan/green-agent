@@ -19,6 +19,8 @@ frontend/coverage/
 frontend/.env.local
 frontend/.env.*.local
 
+.superpowers/
+
 *.sqlite
 *.sqlite3
 *.db
