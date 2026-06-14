@@ -1,4 +1,11 @@
+import json
+import sqlite3
+
+import pytest
+
 from app.knowledge import KnowledgePool
+from app.models import PlanningResult
+from app.planning import plan_routes
 from app.scenario import generate_random_scenario
 from app.simulation import (
     advance_time,
@@ -73,3 +80,149 @@ def test_knowledge_pool_isolates_replaced_scenarios(tmp_path):
     assert pool.get_latest_state(second.id)["scenario"].id == second.id
     assert pool.list_history(second.id) == []
 
+
+def test_knowledge_pool_records_lists_reads_and_restores_planning_records(tmp_path):
+    pool = KnowledgePool(tmp_path / "knowledge.sqlite")
+    scenario = generate_random_scenario(seed=20)
+    for node in scenario.bin_nodes:
+        node.fill_rate = 85
+    plan = plan_routes(scenario, seed=202612, threshold=70)
+
+    record = pool.record_planning_result(scenario, plan, seed=202612, threshold=70)
+
+    summaries = pool.list_planning_records()
+    detail = pool.get_planning_record(record.summary.id)
+    restored = pool.restore_planning_record(record.summary.id)
+
+    assert summaries[0].id == record.summary.id
+    assert summaries[0].title
+    assert scenario.name in summaries[0].title
+    assert summaries[0].scenario_name == scenario.name
+    assert summaries[0].route_count == len(plan.routes)
+    assert detail.summary.title == summaries[0].title
+    assert detail.scenario.model_dump(mode="json") == scenario.model_dump(mode="json")
+    assert detail.plan.record_id == record.summary.id
+    assert restored.record.title == summaries[0].title
+    assert restored.scenario.id == scenario.id
+    assert pool.get_active_scenario().id == scenario.id
+
+
+def test_knowledge_pool_renames_planning_record_without_changing_snapshot(tmp_path):
+    pool = KnowledgePool(tmp_path / "knowledge.sqlite")
+    scenario = generate_random_scenario(seed=22)
+    for node in scenario.bin_nodes:
+        node.fill_rate = 90
+    plan = plan_routes(scenario, seed=2, threshold=70)
+    record = pool.record_planning_result(scenario, plan, seed=2, threshold=70)
+
+    renamed = pool.rename_planning_record(record.summary.id, "  东区夜间方案  ")
+    detail = pool.get_planning_record(record.summary.id)
+
+    assert renamed.title == "东区夜间方案"
+    assert detail.summary.title == "东区夜间方案"
+    assert detail.scenario.model_dump(mode="json") == scenario.model_dump(mode="json")
+    assert detail.plan.record_id == record.summary.id
+
+
+def test_knowledge_pool_rejects_invalid_planning_record_rename(tmp_path):
+    pool = KnowledgePool(tmp_path / "knowledge.sqlite")
+    scenario = generate_random_scenario(seed=23)
+    for node in scenario.bin_nodes:
+        node.fill_rate = 90
+    plan = plan_routes(scenario, seed=3, threshold=70)
+    record = pool.record_planning_result(scenario, plan, seed=3, threshold=70)
+
+    with pytest.raises(ValueError):
+        pool.rename_planning_record(record.summary.id, "   ")
+
+    with pytest.raises(KeyError):
+        pool.rename_planning_record(record.summary.id + 1000, "不存在记录")
+
+
+def test_knowledge_pool_backfills_title_for_legacy_planning_records(tmp_path):
+    db_path = tmp_path / "legacy.sqlite"
+    scenario = generate_random_scenario(seed=24)
+    plan = PlanningResult(record_id=1, total_distance=1.5, estimated_fuel=0.3, estimated_carbon=0.693)
+    scenario_payload = json.dumps(scenario.model_dump(mode="json"), ensure_ascii=False)
+    plan_payload = json.dumps(plan.model_dump(mode="json"), ensure_ascii=False)
+
+    connection = sqlite3.connect(db_path)
+    try:
+        connection.executescript(
+            """
+            CREATE TABLE planning_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scenario_id TEXT NOT NULL,
+                scenario_name TEXT NOT NULL,
+                simulation_time INTEGER NOT NULL,
+                seed INTEGER,
+                threshold_value REAL NOT NULL,
+                route_count INTEGER NOT NULL,
+                total_distance REAL NOT NULL,
+                estimated_fuel REAL NOT NULL,
+                estimated_carbon REAL NOT NULL,
+                scenario_snapshot TEXT NOT NULL,
+                planning_result TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO planning_records
+                (
+                    scenario_id,
+                    scenario_name,
+                    simulation_time,
+                    seed,
+                    threshold_value,
+                    route_count,
+                    total_distance,
+                    estimated_fuel,
+                    estimated_carbon,
+                    scenario_snapshot,
+                    planning_result,
+                    created_at
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                scenario.id,
+                scenario.name,
+                scenario.current_time,
+                24,
+                70,
+                0,
+                plan.total_distance,
+                plan.estimated_fuel,
+                plan.estimated_carbon,
+                scenario_payload,
+                plan_payload,
+                "2026-06-14T00:00:00Z",
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    pool = KnowledgePool(db_path)
+
+    summary = pool.list_planning_records()[0]
+    assert summary.title
+    assert scenario.name in summary.title
+    assert pool.rename_planning_record(summary.id, "兼容旧记录").title == "兼容旧记录"
+
+
+def test_knowledge_pool_preserves_planning_records_when_resetting_scenario(tmp_path):
+    pool = KnowledgePool(tmp_path / "knowledge.sqlite")
+    scenario = generate_random_scenario(seed=21)
+    for node in scenario.bin_nodes:
+        node.fill_rate = 90
+    plan = plan_routes(scenario, seed=1, threshold=70)
+    record = pool.record_planning_result(scenario, plan, seed=1, threshold=70)
+
+    pool.reset()
+
+    assert pool.get_active_scenario() is None
+    assert pool.get_planning_record(record.summary.id).scenario.id == scenario.id
+    assert [summary.id for summary in pool.list_planning_records()] == [record.summary.id]

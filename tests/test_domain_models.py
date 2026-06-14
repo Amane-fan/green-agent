@@ -3,12 +3,18 @@ from app.models import (
     FillTrend,
     GarbageCategory,
     NodeType,
+    PlanningRecordDetail,
+    PlanningRecordRenameRequest,
+    PlanningRecordRestoreResponse,
+    PlanningRecordSummary,
+    PlanningResult,
     Scenario,
     ScenarioNode,
     Vehicle,
     ProcessingFacility,
 )
 from app.scenario import validate_garbage_category_coverage
+import pytest
 
 
 def test_scenario_payload_serializes_nodes_edges_and_validation_status():
@@ -92,3 +98,46 @@ def test_category_coverage_rejects_unserviceable_generated_category():
     assert result.is_valid is False
     assert "hazardous" in result.warnings[0]
 
+
+def test_planning_record_models_serialize_summary_detail_and_restore_payload():
+    scenario = Scenario(
+        id="scenario-record",
+        name="历史场景",
+        nodes=[],
+        edges=[],
+        vehicles=[],
+        facilities=[],
+    )
+    plan = PlanningResult(record_id=7, total_distance=12.5, estimated_fuel=2.5, estimated_carbon=5.775)
+    summary = PlanningRecordSummary(
+        id=7,
+        title="夜间收运方案",
+        scenario_id=scenario.id,
+        scenario_name=scenario.name,
+        simulation_time=3,
+        seed=202612,
+        threshold=70,
+        route_count=0,
+        total_distance=12.5,
+        estimated_fuel=2.5,
+        estimated_carbon=5.775,
+        created_at="2026-06-14T00:00:00Z",
+    )
+    detail = PlanningRecordDetail(summary=summary, scenario=scenario, plan=plan)
+    restored = PlanningRecordRestoreResponse(record=summary, scenario=scenario, plan=plan)
+
+    payload = restored.model_dump(mode="json")
+
+    assert detail.summary.id == 7
+    assert payload["record"]["title"] == "夜间收运方案"
+    assert payload["record"]["scenario_name"] == "历史场景"
+    assert payload["plan"]["record_id"] == 7
+
+
+def test_planning_record_rename_request_normalizes_and_rejects_blank_title():
+    request = PlanningRecordRenameRequest(title="  早高峰方案  ")
+
+    assert request.title == "早高峰方案"
+
+    with pytest.raises(ValueError):
+        PlanningRecordRenameRequest(title="   ")

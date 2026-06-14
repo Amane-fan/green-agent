@@ -3,15 +3,33 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.graph import validate_graph
 from app.knowledge import KnowledgePool
-from app.models import PlanningRequest, Scenario, ScenarioGenerateRequest, TimeAdvanceRequest
+from app.models import (
+    PlanningRecordDetail,
+    PlanningRecordRenameRequest,
+    PlanningRecordRestoreResponse,
+    PlanningRecordSummary,
+    PlanningRequest,
+    Scenario,
+    ScenarioGenerateRequest,
+    TimeAdvanceRequest,
+)
 from app.orchestration import run_planning_workflow
 from app.scenario import generate_random_scenario
 from app.simulation import advance_time, compute_predictions
+
+
+def load_environment_config(env_path: str | Path | None = None) -> None:
+    dotenv_path = Path(env_path) if env_path is not None else Path(__file__).resolve().parents[1] / ".env"
+    load_dotenv(dotenv_path=dotenv_path, override=False)
+
+
+load_environment_config()
 
 app = FastAPI(title="绿运先锋 API")
 app.add_middleware(
@@ -23,7 +41,8 @@ app.add_middleware(
 )
 
 default_db_path = Path(os.getenv("GREEN_AGENT_DB_PATH", f"/tmp/green-agent-demo-{os.getpid()}.sqlite"))
-knowledge_pool = KnowledgePool(default_db_path)
+database_url = os.getenv("GREEN_AGENT_DATABASE_URL")
+knowledge_pool = KnowledgePool(default_db_path, database_url=database_url)
 
 
 @app.get("/api/health")
@@ -100,4 +119,44 @@ def post_plan_routes(request: PlanningRequest):
         seed=request.seed,
         threshold=request.threshold,
     )
-    return result
+    record = knowledge_pool.record_planning_result(
+        scenario,
+        result,
+        seed=request.seed,
+        threshold=request.threshold,
+    )
+    return record.plan
+
+
+@app.get("/api/planning-records", response_model=list[PlanningRecordSummary])
+def get_planning_records() -> list[PlanningRecordSummary]:
+    return knowledge_pool.list_planning_records()
+
+
+@app.get("/api/planning-records/{record_id}", response_model=PlanningRecordDetail)
+def get_planning_record(record_id: int) -> PlanningRecordDetail:
+    try:
+        return knowledge_pool.get_planning_record(record_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.patch("/api/planning-records/{record_id}", response_model=PlanningRecordSummary)
+def patch_planning_record(
+    record_id: int,
+    request: PlanningRecordRenameRequest,
+) -> PlanningRecordSummary:
+    try:
+        return knowledge_pool.rename_planning_record(record_id, request.title)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/planning-records/{record_id}/restore", response_model=PlanningRecordRestoreResponse)
+def post_restore_planning_record(record_id: int) -> PlanningRecordRestoreResponse:
+    try:
+        return knowledge_pool.restore_planning_record(record_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

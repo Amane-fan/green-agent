@@ -161,6 +161,7 @@ class AgentTraceStep(BaseModel):
 
 
 class PlanningResult(BaseModel):
+    record_id: int | None = None
     routes: list[VehicleRoute] = Field(default_factory=list)
     unassigned_tasks: list[UnassignedTask] = Field(default_factory=list)
     total_distance: float = 0
@@ -185,3 +186,41 @@ class PlanningRequest(BaseModel):
     seed: int | None = None
     threshold: float = Field(default=70, ge=0, le=100)
 
+
+class PlanningRecordRenameRequest(BaseModel):
+    title: str = Field(max_length=120)
+
+    @field_validator("title")
+    @classmethod
+    def normalize_title(cls, value: str) -> str:
+        title = value.strip()
+        if not title:
+            raise ValueError("Planning record title cannot be blank")
+        return title
+
+
+class PlanningRecordSummary(BaseModel):
+    id: int
+    title: str
+    scenario_id: str
+    scenario_name: str
+    simulation_time: int
+    seed: int | None = None
+    threshold: float
+    route_count: int
+    total_distance: float
+    estimated_fuel: float
+    estimated_carbon: float
+    created_at: str
+
+
+class PlanningRecordDetail(BaseModel):
+    summary: PlanningRecordSummary
+    scenario: Scenario
+    plan: PlanningResult
+
+
+class PlanningRecordRestoreResponse(BaseModel):
+    record: PlanningRecordSummary
+    scenario: Scenario
+    plan: PlanningResult

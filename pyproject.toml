@@ -10,6 +10,8 @@ dependencies = [
     "networkx>=3.4",
     "numpy>=2.0.0",
     "pydantic>=2.10.0",
+    "python-dotenv>=1.0.1",
+    "pymysql>=1.1.1",
     "uvicorn>=0.34.0",
 ]
 
