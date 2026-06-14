@@ -1,6 +1,7 @@
 .venv/
 __pycache__/
 .pytest_cache/
+.hypothesis/
 *.pyc
 *.pyo
 *.pyd
@@ -10,16 +11,24 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 .tox/
+.nox/
+.eggs/
+*.egg-info/
+build/
+dist/
 
+node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
-frontend/tsconfig.tsbuildinfo
+*.tsbuildinfo
 frontend/coverage/
+coverage/
 frontend/.env.local
 frontend/.env.*.local
 
 .superpowers/
+.uv-cache/
 
 *.sqlite
 *.sqlite3
@@ -37,3 +46,8 @@ pnpm-debug.log*
 
 .DS_Store
 Thumbs.db
+
+.vscode/
+.idea/
+*.swp
+*.swo
