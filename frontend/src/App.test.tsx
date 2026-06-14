@@ -272,6 +272,23 @@ const historyRecordSummary = {
   created_at: '2026-06-14T00:00:00Z',
 };
 
+function sseResponse(chunks: string[]) {
+  const encoder = new TextEncoder();
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        for (const chunk of chunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    }),
+    {
+      headers: { 'Content-Type': 'text/event-stream' },
+    },
+  );
+}
+
 function installFetchMock(
   planningResponse = planPayload,
   options: {
@@ -300,6 +317,15 @@ function installFetchMock(
 
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    if (url.includes('/api/ai-assistant/chat/stream')) {
+      const payload = JSON.parse(String(init?.body));
+      const isFollowUp = payload.messages.length > 1;
+      return sseResponse(
+        isFollowUp
+          ? ['data: {"delta":"第二轮回答"}\n\n', 'data: {"done":true}\n\n']
+          : ['data: {"delta":"第一段"}\n\n', 'data: {"delta":"第二段"}\n\n', 'data: {"done":true}\n\n'],
+      );
+    }
     if (url.includes('/api/planning-records/') && init?.method === 'PATCH') {
       const payload = JSON.parse(String(init.body));
       const currentRecord = recordForUrl(url);
@@ -657,6 +683,41 @@ describe('App', () => {
     expect(routeSegment).toHaveTextContent('车辆燃油率: 0.20 L/km');
     expect(routeSegment).toHaveTextContent('预计路段燃油: 0.10 L');
     expect(routeSegment).toHaveTextContent('预计路段碳排放: 0.23 kg');
+  });
+
+  it('runs the homepage AI assistant flow against the current planned record', async () => {
+    const fetchMock = installFetchMock();
+
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: '随机生成场景' }));
+    await userEvent.click(screen.getByRole('button', { name: '规划路线' }));
+    expect(await screen.findByText('总距离: 3.50 km')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: '打开 AI 助手' }));
+    const input = screen.getByLabelText('向 AI 助手提问');
+    await userEvent.type(input, '总结当前规划');
+    await userEvent.click(screen.getByRole('button', { name: '发送问题' }));
+    expect(await screen.findByText('第一段第二段')).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText('向 AI 助手提问'), '它为什么这样安排？');
+    await userEvent.click(screen.getByRole('button', { name: '发送问题' }));
+    expect(await screen.findByText('第二轮回答')).toBeInTheDocument();
+
+    const aiCalls = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes('/api/ai-assistant/chat/stream'),
+    );
+    const secondPayload = JSON.parse(String(aiCalls[1][1]?.body));
+    expect(secondPayload).toMatchObject({ record_id: 1 });
+    expect(secondPayload.messages).toEqual([
+      { role: 'user', content: '总结当前规划' },
+      { role: 'assistant', content: '第一段第二段' },
+      { role: 'user', content: '它为什么这样安排？' },
+    ]);
+
+    await userEvent.click(screen.getByRole('button', { name: '推进时间' }));
+
+    await waitFor(() => expect(screen.queryByText('第一段第二段')).not.toBeInTheDocument());
+    expect(screen.getByText('请先执行或恢复路线规划，再向 AI 助手提问。')).toBeInTheDocument();
   });
 
   it('enters placement mode and creates custom nodes at the clicked map coordinate', async () => {

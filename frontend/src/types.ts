@@ -123,3 +123,21 @@ export interface PlanningRecordRestoreResponse {
   scenario: Scenario;
   plan: PlanningResult;
 }
+
+export type AIAssistantRole = 'user' | 'assistant';
+
+export interface AIAssistantMessage {
+  role: AIAssistantRole;
+  content: string;
+}
+
+export interface AIAssistantChatRequest {
+  record_id: number;
+  messages: AIAssistantMessage[];
+}
+
+export interface AIAssistantStreamEvent {
+  delta?: string;
+  done?: boolean;
+  error?: string;
+}

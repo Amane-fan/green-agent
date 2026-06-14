@@ -13,6 +13,7 @@ import {
   restorePlanningRecord,
   saveScenario,
 } from './api';
+import PlanningAssistant from './PlanningAssistant';
 import type {
   Edge,
   PlanningRecordSummary,
@@ -394,6 +395,13 @@ export default function App() {
   const selectedTaskContext = selectedRouteTaskContext(scenario, selectedRoute);
   const routeSegmentsToRender =
     scenario && plan ? renderedRouteSegments(scenario, plan.routes, selectedRoute) : [];
+  const planningAssistantResetKey = [
+    plan?.record_id ?? 'none',
+    scenario?.id ?? 'none',
+    scenario?.current_time ?? 0,
+    scenario?.nodes.length ?? 0,
+    scenario?.edges.length ?? 0,
+  ].join(':');
 
   async function runAction(action: () => Promise<void>) {
     setLoading(true);
@@ -965,6 +973,10 @@ export default function App() {
           )}
         </aside>
       </section>
+      <PlanningAssistant
+        recordId={plan?.record_id ?? null}
+        resetKey={planningAssistantResetKey}
+      />
     </main>
   );
 }

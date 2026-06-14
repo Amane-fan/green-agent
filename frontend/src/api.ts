@@ -1,4 +1,6 @@
 import type {
+  AIAssistantChatRequest,
+  AIAssistantStreamEvent,
   PlanningRecordDetail,
   PlanningRecordRestoreResponse,
   PlanningRecordSummary,
@@ -77,4 +79,73 @@ export function restorePlanningRecord(recordId: number): Promise<PlanningRecordR
   return request<PlanningRecordRestoreResponse>(`/api/planning-records/${recordId}/restore`, {
     method: 'POST',
   });
+}
+
+export async function streamPlanningAssistantChat(
+  payload: AIAssistantChatRequest,
+  onEvent: (event: AIAssistantStreamEvent) => void,
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/ai-assistant/chat/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(String(detail.detail ?? detail));
+  }
+  if (!response.body) {
+    throw new Error('AI 助手响应流不可用');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (value) {
+      buffer += decoder.decode(value, { stream: !done });
+      buffer = parseSseBuffer(buffer, onEvent);
+    }
+    if (done) {
+      buffer += decoder.decode();
+      parseSseBuffer(`${buffer}\n\n`, onEvent);
+      break;
+    }
+  }
+}
+
+function parseSseBuffer(
+  buffer: string,
+  onEvent: (event: AIAssistantStreamEvent) => void,
+): string {
+  const frames = buffer.split(/\n\n/);
+  const remainder = frames.pop() ?? '';
+
+  for (const frame of frames) {
+    const dataLines = frame
+      .split(/\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.replace(/^data:\s*/, ''));
+    if (dataLines.length === 0) {
+      continue;
+    }
+    const raw = dataLines.join('\n');
+    if (raw === '[DONE]') {
+      onEvent({ done: true });
+      continue;
+    }
+    const event = JSON.parse(raw) as AIAssistantStreamEvent;
+    if (event.error) {
+      throw new Error(event.error);
+    }
+    onEvent(event);
+  }
+
+  return remainder;
 }

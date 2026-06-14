@@ -20,7 +20,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -148,6 +149,17 @@ input {
 
 select {
   width: 100%;
+  padding: 10px 12px;
+  color: #ecfdf5;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 14px;
+  outline: none;
+  background: rgba(15, 23, 42, 0.84);
+}
+
+textarea {
+  width: 100%;
+  resize: none;
   padding: 10px 12px;
   color: #ecfdf5;
   border: 1px solid rgba(148, 163, 184, 0.28);
@@ -478,4 +490,250 @@ button:disabled {
 .history-rename-form {
   display: grid;
   gap: 10px;
+}
+
+.planning-assistant-shell {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.planning-assistant-shell > * {
+  pointer-events: auto;
+}
+
+.planning-assistant-launch {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border-radius: 999px;
+  color: #082f49;
+  background:
+    linear-gradient(135deg, #e0f2fe, #67e8f9 42%, #86efac),
+    #67e8f9;
+  box-shadow:
+    0 18px 45px rgba(6, 182, 212, 0.25),
+    0 0 0 1px rgba(224, 242, 254, 0.48);
+  letter-spacing: 0;
+}
+
+.planning-assistant-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 48px));
+  max-height: min(620px, calc(100vh - 120px));
+  overflow: hidden;
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(6, 18, 24, 0.96)),
+    #0f172a;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(18px);
+}
+
+.planning-assistant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.planning-assistant-header h2 {
+  margin: 0;
+  color: #e0f2fe;
+  font-size: 20px;
+  letter-spacing: 0;
+}
+
+.planning-assistant-kicker {
+  display: block;
+  margin-bottom: 3px;
+  color: #67e8f9;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.planning-assistant-icon-button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  color: #cffafe;
+  background: rgba(8, 47, 73, 0.72);
+}
+
+.planning-assistant-notice,
+.planning-assistant-error,
+.planning-assistant-empty {
+  margin: 12px 16px 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.planning-assistant-notice {
+  color: #fef3c7;
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  background: rgba(120, 53, 15, 0.28);
+}
+
+.planning-assistant-error {
+  color: #fecaca;
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  background: rgba(127, 29, 29, 0.3);
+}
+
+.planning-assistant-empty {
+  color: #a7f3d0;
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  background: rgba(20, 83, 45, 0.22);
+}
+
+.planning-assistant-messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 180px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 14px 16px;
+}
+
+.planning-assistant-message {
+  display: grid;
+  gap: 5px;
+  max-width: 88%;
+}
+
+.planning-assistant-message-user {
+  align-self: flex-end;
+}
+
+.planning-assistant-message-assistant {
+  align-self: flex-start;
+}
+
+.planning-assistant-message-role {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.planning-assistant-message-body,
+.planning-assistant-markdown {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.78);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.planning-assistant-message-body {
+  white-space: pre-wrap;
+}
+
+.planning-assistant-message-user .planning-assistant-message-body {
+  color: #052e16;
+  background: linear-gradient(135deg, #bbf7d0, #67e8f9);
+}
+
+.planning-assistant-message[data-status='error'] .planning-assistant-markdown {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.24);
+  background: rgba(127, 29, 29, 0.3);
+}
+
+.planning-assistant-markdown > :first-child {
+  margin-top: 0;
+}
+
+.planning-assistant-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.planning-assistant-markdown h1,
+.planning-assistant-markdown h2,
+.planning-assistant-markdown h3 {
+  margin: 0 0 8px;
+  color: #e0f2fe;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.planning-assistant-markdown p,
+.planning-assistant-markdown ul,
+.planning-assistant-markdown ol,
+.planning-assistant-markdown pre {
+  margin: 8px 0;
+}
+
+.planning-assistant-markdown ul,
+.planning-assistant-markdown ol {
+  padding-left: 20px;
+}
+
+.planning-assistant-markdown li {
+  margin: 4px 0;
+}
+
+.planning-assistant-markdown a {
+  color: #67e8f9;
+}
+
+.planning-assistant-markdown code {
+  padding: 2px 5px;
+  border-radius: 6px;
+  color: #fde68a;
+  background: rgba(2, 6, 23, 0.64);
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.92em;
+}
+
+.planning-assistant-markdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.72);
+}
+
+.planning-assistant-markdown pre code {
+  padding: 0;
+  color: #d1fae5;
+  background: transparent;
+  white-space: pre;
+}
+
+.planning-assistant-form {
+  display: grid;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+.planning-assistant-form button {
+  justify-self: end;
+  min-width: 88px;
+}
+
+.planning-assistant-status {
+  min-height: 18px;
+  padding: 0 16px 14px;
+  color: #67e8f9;
+  font-size: 12px;
 }
