@@ -5,12 +5,17 @@ import 'leaflet/dist/leaflet.css';
 import {
   advanceSimulationTime,
   generateRandomScenario,
+  listPlanningRecords,
+  loadPlanningRecord,
   loadCurrentScenario,
   planRoutes,
+  renamePlanningRecord,
+  restorePlanningRecord,
   saveScenario,
 } from './api';
 import type {
   Edge,
+  PlanningRecordSummary,
   PlanningResult,
   ProcessingFacility,
   RouteStop,
@@ -303,9 +308,26 @@ function routeFacilityStop(route: VehicleRoute): RouteStop | undefined {
   return orderedRouteStops(route).find((stop) => stop.node_type === 'facility');
 }
 
+function currentLocation() {
+  return {
+    pathname: window.location.pathname,
+    search: window.location.search,
+  };
+}
+
+function recordIdFromSearch(search: string): number | null {
+  const value = new URLSearchParams(search).get('record_id');
+  if (!value) {
+    return null;
+  }
+  const recordId = Number(value);
+  return Number.isFinite(recordId) ? recordId : null;
+}
+
 export default function App() {
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [plan, setPlan] = useState<PlanningResult | null>(null);
+  const [currentPlanningTitle, setCurrentPlanningTitle] = useState<string | null>(null);
   const [seed, setSeed] = useState(202612);
   const [threshold, setThreshold] = useState(70);
   const [edgeSource, setEdgeSource] = useState('');
@@ -315,14 +337,41 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [pendingNodeType, setPendingNodeType] = useState<CustomNodeType | null>(null);
+  const [planningRecords, setPlanningRecords] = useState<PlanningRecordSummary[]>([]);
+  const [location, setLocation] = useState(currentLocation);
+  const [editingRecordId, setEditingRecordId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   useEffect(() => {
+    const handlePopState = () => setLocation(currentLocation());
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname === '/history') {
+      refreshPlanningRecords();
+      return;
+    }
+
+    const recordId = recordIdFromSearch(location.search);
+    if (recordId !== null) {
+      runAction(async () => {
+        await restorePlanningHistory(recordId);
+      });
+      return;
+    }
+
     loadCurrentScenario()
-      .then(setScenario)
+      .then((loadedScenario) => {
+        setScenario(loadedScenario);
+        setPlan(null);
+        setCurrentPlanningTitle(null);
+      })
       .catch(() => {
         // 初始场景加载失败时允许用户通过随机生成继续演示。
       });
-  }, []);
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     setSelectedRouteId(plan?.routes[0]?.vehicle_id ?? null);
@@ -358,6 +407,48 @@ export default function App() {
     }
   }
 
+  async function refreshPlanningRecords() {
+    try {
+      setPlanningRecords(await listPlanningRecords());
+    } catch {
+      // 历史记录加载失败不阻塞当前地图演示。
+    }
+  }
+
+  async function restorePlanningHistory(recordId: number) {
+    const restored = await restorePlanningRecord(recordId);
+    setScenario(restored.scenario);
+    setPlan(restored.plan);
+    setCurrentPlanningTitle(restored.record.title);
+    setPendingNodeType(null);
+    setError(null);
+  }
+
+  function navigate(path: string) {
+    window.history.pushState({}, '', path);
+    setLocation(currentLocation());
+  }
+
+  async function syncPlanningTitle(recordId: number | null | undefined) {
+    if (!recordId) {
+      setCurrentPlanningTitle(null);
+      return;
+    }
+    const detail = await loadPlanningRecord(recordId);
+    setCurrentPlanningTitle(detail.summary.title);
+  }
+
+  async function renameHistoryRecord(recordId: number, title: string) {
+    const renamed = await renamePlanningRecord(recordId, title);
+    setPlanningRecords((records) =>
+      records.map((record) => (record.id === renamed.id ? renamed : record)),
+    );
+    if (plan?.record_id === renamed.id) {
+      setCurrentPlanningTitle(renamed.title);
+    }
+    setEditingRecordId(null);
+  }
+
   function baseScenario(): Scenario {
     return (
       scenario ?? {
@@ -377,6 +468,7 @@ export default function App() {
     const saved = await saveScenario(next);
     setScenario(saved);
     setPlan(null);
+    setCurrentPlanningTitle(null);
     setSelectedRouteId(null);
   }
 
@@ -459,6 +551,99 @@ export default function App() {
     });
   }
 
+  if (location.pathname === '/history') {
+    return (
+      <main className="app-shell history-shell">
+        <section className="hero-panel history-hero">
+          <div>
+            <p className="eyebrow">Planning Archive</p>
+            <h1>规划历史</h1>
+            <p className="subtitle">查看、重命名并恢复已有的垃圾分类收运规划结果。</p>
+          </div>
+          <button type="button" onClick={() => navigate('/')}>
+            返回首页
+          </button>
+        </section>
+
+        <section className="history-page-panel">
+          {error && <p className="error-box">{error}</p>}
+          {planningRecords.length > 0 ? (
+            <div className="history-page-list">
+              {planningRecords.map((record) => (
+                <div
+                  key={record.id}
+                  role="button"
+                  tabIndex={0}
+                  className="history-record-card history-record-card-large"
+                  aria-label={`查看规划记录 ${record.id}`}
+                  onClick={() => navigate(`/?record_id=${record.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      navigate(`/?record_id=${record.id}`);
+                    }
+                  }}
+                >
+                  {editingRecordId === record.id ? (
+                    <form
+                      className="history-rename-form"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        runAction(() => renameHistoryRecord(record.id, editingTitle));
+                      }}
+                    >
+                      <label>
+                        规划结果名称
+                        <input
+                          aria-label="规划结果名称"
+                          value={editingTitle}
+                          onChange={(event) => setEditingTitle(event.target.value)}
+                        />
+                      </label>
+                      <button type="submit" disabled={loading} aria-label={`保存规划记录 ${record.id}`}>
+                        保存
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <span className="history-record-title">{record.title}</span>
+                      <span>场景 {record.scenario_name}</span>
+                      <span>模拟时间 {record.simulation_time}</span>
+                      <span>路线 {record.route_count}</span>
+                      <span>
+                        {record.total_distance.toFixed(2)} km / {record.estimated_fuel.toFixed(2)} L /{' '}
+                        {record.estimated_carbon.toFixed(2)} kg
+                      </span>
+                      <small>{record.created_at}</small>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={loading}
+                        aria-label={`重命名规划记录 ${record.id}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditingRecordId(record.id);
+                          setEditingTitle(record.title);
+                        }}
+                      >
+                        重命名
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-state">暂无规划记录</p>
+          )}
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="app-shell">
       <section className="hero-panel">
@@ -477,6 +662,7 @@ export default function App() {
 
       <section className="workspace">
         <aside className="control-panel">
+          <div className="panel-scroll">
           <label>
             随机种子
             <input
@@ -503,6 +689,7 @@ export default function App() {
                 const next = await generateRandomScenario(seed);
                 setScenario(next);
                 setPlan(null);
+                setCurrentPlanningTitle(null);
                 setSelectedRouteId(null);
                 setPendingNodeType(null);
               })
@@ -518,6 +705,7 @@ export default function App() {
                 const next = await advanceSimulationTime(1);
                 setScenario(next);
                 setPlan(null);
+                setCurrentPlanningTitle(null);
                 setSelectedRouteId(null);
               })
             }
@@ -529,11 +717,17 @@ export default function App() {
             disabled={loading || !scenario || !scenario.validation.is_valid}
             onClick={() =>
               runAction(async () => {
-                setPlan(await planRoutes(seed, threshold));
+                const nextPlan = await planRoutes(seed, threshold);
+                setPlan(nextPlan);
+                await syncPlanningTitle(nextPlan.record_id);
+                await refreshPlanningRecords();
               })
             }
           >
             规划路线
+          </button>
+          <button type="button" className="secondary-button" onClick={() => navigate('/history')}>
+            查看规划历史
           </button>
 
           <div className="editor-card">
@@ -606,6 +800,7 @@ export default function App() {
             <span>处理厂: {facilities.length}</span>
             <span>边: {scenario?.edges.length ?? 0}</span>
           </div>
+          </div>
         </aside>
 
         <section className="map-card" aria-label="路线地图">
@@ -619,7 +814,7 @@ export default function App() {
               <Polyline
                 key={`${edge.source}-${edge.target}`}
                 positions={edgePositions(scenario, edge)}
-                pathOptions={{ color: '#64748b', weight: 1.5, opacity: 0.5 }}
+                pathOptions={{ className: 'graph-edge', color: '#334155', weight: 3, opacity: 0.85 }}
               >
                 <Popup>长度: {edge.weight.toFixed(2)} km</Popup>
               </Polyline>
@@ -673,8 +868,9 @@ export default function App() {
                   key={`${segment.route.vehicle_id}-${segment.index}-${segment.sourceId}-${segment.targetId}`}
                   positions={segment.positions}
                   pathOptions={{
-                    className: 'selected-route-segment',
+                    className: 'selected-route-segment selected-route-flow',
                     color: segment.route.color,
+                    dashArray: '10 8',
                     weight: 5,
                     opacity: 0.9,
                   }}
@@ -701,6 +897,7 @@ export default function App() {
 
         <aside className="insight-panel">
           <h2>规划结果</h2>
+          {currentPlanningTitle && <p className="planning-title">{currentPlanningTitle}</p>}
           {plan ? (
             <>
               <div className="score-card">
@@ -708,8 +905,9 @@ export default function App() {
                 <span>油耗: {plan.estimated_fuel.toFixed(2)} L</span>
                 <span>碳排放: {plan.estimated_carbon.toFixed(2)} kg</span>
               </div>
-              <div className="route-list">
-                {plan.routes.map((route) => {
+              <div className="route-scroll-window">
+                <div className="route-list">
+                  {plan.routes.map((route) => {
                   const routeStartNode =
                     scenario && selectedVehicleStartNode(scenario, route);
                   const collectionStops = orderedRouteStops(route).filter(
@@ -754,6 +952,7 @@ export default function App() {
                     </button>
                   );
                 })}
+                </div>
               </div>
               {plan.unassigned_tasks.length > 0 && (
                 <div className="warning-box">

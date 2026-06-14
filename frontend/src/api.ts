@@ -1,4 +1,10 @@
-import type { PlanningResult, Scenario } from './types';
+import type {
+  PlanningRecordDetail,
+  PlanningRecordRestoreResponse,
+  PlanningRecordSummary,
+  PlanningResult,
+  Scenario,
+} from './types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
@@ -46,5 +52,29 @@ export function planRoutes(seed: number, threshold: number): Promise<PlanningRes
   return request<PlanningResult>('/api/planning/routes', {
     method: 'POST',
     body: JSON.stringify({ seed, threshold }),
+  });
+}
+
+export function listPlanningRecords(): Promise<PlanningRecordSummary[]> {
+  return request<PlanningRecordSummary[]>('/api/planning-records');
+}
+
+export function loadPlanningRecord(recordId: number): Promise<PlanningRecordDetail> {
+  return request<PlanningRecordDetail>(`/api/planning-records/${recordId}`);
+}
+
+export function renamePlanningRecord(
+  recordId: number,
+  title: string,
+): Promise<PlanningRecordSummary> {
+  return request<PlanningRecordSummary>(`/api/planning-records/${recordId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ title }),
+  });
+}
+
+export function restorePlanningRecord(recordId: number): Promise<PlanningRecordRestoreResponse> {
+  return request<PlanningRecordRestoreResponse>(`/api/planning-records/${recordId}/restore`, {
+    method: 'POST',
   });
 }

@@ -87,6 +87,7 @@ export interface AgentTraceStep {
 }
 
 export interface PlanningResult {
+  record_id?: number | null;
   routes: VehicleRoute[];
   unassigned_tasks: UnassignedTask[];
   total_distance: number;
@@ -96,3 +97,29 @@ export interface PlanningResult {
   trace: AgentTraceStep[];
 }
 
+export interface PlanningRecordSummary {
+  id: number;
+  title: string;
+  scenario_id: string;
+  scenario_name: string;
+  simulation_time: number;
+  seed?: number | null;
+  threshold: number;
+  route_count: number;
+  total_distance: number;
+  estimated_fuel: number;
+  estimated_carbon: number;
+  created_at: string;
+}
+
+export interface PlanningRecordDetail {
+  summary: PlanningRecordSummary;
+  scenario: Scenario;
+  plan: PlanningResult;
+}
+
+export interface PlanningRecordRestoreResponse {
+  record: PlanningRecordSummary;
+  scenario: Scenario;
+  plan: PlanningResult;
+}

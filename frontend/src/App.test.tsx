@@ -1,5 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { readFileSync } from 'node:fs';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,7 +30,13 @@ vi.mock('react-leaflet', () => ({
   }: {
     children?: ReactNode;
     positions: [number, number][];
-    pathOptions?: { className?: string; color?: string; opacity?: number; weight?: number };
+    pathOptions?: {
+      className?: string;
+      color?: string;
+      dashArray?: string;
+      opacity?: number;
+      weight?: number;
+    };
   }) => {
     const className = pathOptions?.className ?? '';
     const testId = className.includes('selected-route-segment')
@@ -41,6 +48,7 @@ vi.mock('react-leaflet', () => ({
         data-testid={testId}
         data-class-name={className}
         data-color={pathOptions?.color}
+        data-dash-array={pathOptions?.dashArray}
         data-opacity={pathOptions?.opacity}
         data-positions={JSON.stringify(positions)}
         data-weight={pathOptions?.weight}
@@ -144,6 +152,7 @@ const scenarioPayload = {
 };
 
 const planPayload = {
+  record_id: 1,
   routes: [
     {
       vehicle_id: 'vehicle-1',
@@ -179,9 +188,149 @@ const overlappingPlanPayload = {
   ],
 };
 
-function installFetchMock(planningResponse = planPayload) {
+const historyScenarioPayload = {
+  ...scenarioPayload,
+  id: 'scenario-history',
+  name: '历史记录场景',
+  current_time: 4,
+  nodes: [
+    {
+      id: 'history-bin-1',
+      type: 'bin',
+      lat: 31.24,
+      lng: 121.49,
+      waste_type: 'recyclable',
+      fill_rate: 91,
+      capacity: 10,
+      fill_trend: { kind: 'linear', rate_per_step: 1 },
+    },
+    { id: 'history-vehicle-node-1', type: 'vehicle', lat: 31.235, lng: 121.485 },
+    { id: 'history-facility-node-1', type: 'facility', lat: 31.23, lng: 121.48 },
+  ],
+  edges: [
+    { source: 'history-vehicle-node-1', target: 'history-bin-1', weight: 1.2 },
+    { source: 'history-bin-1', target: 'history-facility-node-1', weight: 3.0 },
+  ],
+  vehicles: [
+    {
+      id: 'history-vehicle-1',
+      node_id: 'history-vehicle-node-1',
+      supported_waste_type: 'recyclable',
+      capacity: 50,
+      fuel_per_km: 0.3,
+      color: '#2563eb',
+    },
+  ],
+  facilities: [
+    {
+      id: 'history-facility-1',
+      node_id: 'history-facility-node-1',
+      accepted_waste_types: ['recyclable'],
+      capacity: 200,
+    },
+  ],
+  validation: { is_valid: true, disconnected_nodes: [], warnings: [] },
+};
+
+const historyPlanPayload = {
+  record_id: 42,
+  routes: [
+    {
+      vehicle_id: 'history-vehicle-1',
+      color: '#2563eb',
+      facility_id: 'history-facility-1',
+      stops: [
+        { node_id: 'history-bin-1', node_type: 'bin', order: 1, fill_rate: 91 },
+        { node_id: 'history-facility-node-1', node_type: 'facility', order: 2 },
+      ],
+      path_node_ids: ['history-vehicle-node-1', 'history-bin-1', 'history-facility-node-1'],
+      distance: 4.2,
+      estimated_fuel: 1.26,
+      estimated_carbon: 2.91,
+    },
+  ],
+  unassigned_tasks: [],
+  total_distance: 4.2,
+  estimated_fuel: 1.26,
+  estimated_carbon: 2.91,
+  warnings: [],
+  trace: [{ agent: 'monitoring', message: 'restored 1 eligible bin' }],
+};
+
+const historyRecordSummary = {
+  id: 42,
+  title: '历史规划 A',
+  scenario_id: 'scenario-history',
+  scenario_name: '历史记录场景',
+  simulation_time: 4,
+  seed: 202612,
+  threshold: 70,
+  route_count: 1,
+  total_distance: 4.2,
+  estimated_fuel: 1.26,
+  estimated_carbon: 2.91,
+  created_at: '2026-06-14T00:00:00Z',
+};
+
+function installFetchMock(
+  planningResponse = planPayload,
+  options: {
+    records?: typeof historyRecordSummary[];
+    recordsAfterPlan?: typeof historyRecordSummary[];
+    restoreResponse?: {
+      record: typeof historyRecordSummary;
+      scenario: typeof historyScenarioPayload;
+      plan: typeof historyPlanPayload;
+    };
+  } = {},
+) {
+  let hasPlanned = false;
+  let records = [...(options.records ?? [])];
+  let recordsAfterPlan = options.recordsAfterPlan ? [...options.recordsAfterPlan] : undefined;
+
+  function recordForUrl(url: string) {
+    const id = Number(url.match(/\/api\/planning-records\/(\d+)/)?.[1] ?? historyRecordSummary.id);
+    return (
+      (hasPlanned && recordsAfterPlan ? recordsAfterPlan : records).find((record) => record.id === id) ?? {
+        ...historyRecordSummary,
+        id,
+      }
+    );
+  }
+
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    if (url.includes('/api/planning-records/') && init?.method === 'PATCH') {
+      const payload = JSON.parse(String(init.body));
+      const currentRecord = recordForUrl(url);
+      const renamed = { ...currentRecord, title: payload.title };
+      records = records.map((record) => (record.id === renamed.id ? renamed : record));
+      recordsAfterPlan = recordsAfterPlan?.map((record) =>
+        record.id === renamed.id ? renamed : record,
+      );
+      return Response.json(renamed);
+    }
+    if (url.includes('/api/planning-records/') && url.includes('/restore')) {
+      const record = recordForUrl(url);
+      return Response.json(
+        options.restoreResponse ?? {
+          record,
+          scenario: historyScenarioPayload,
+          plan: historyPlanPayload,
+        },
+      );
+    }
+    if (url.includes('/api/planning-records/')) {
+      const summary = recordForUrl(url);
+      return Response.json({
+        summary,
+        scenario: historyScenarioPayload,
+        plan: historyPlanPayload,
+      });
+    }
+    if (url.includes('/api/planning-records')) {
+      return Response.json(hasPlanned && recordsAfterPlan ? recordsAfterPlan : records);
+    }
     if (url.includes('/api/scenarios/current') && init?.method === 'PUT') {
       const payload = JSON.parse(String(init.body));
       return Response.json({
@@ -196,6 +345,7 @@ function installFetchMock(planningResponse = planPayload) {
       return Response.json({ ...scenarioPayload, current_time: 1 });
     }
     if (url.includes('/api/planning/routes')) {
+      hasPlanned = true;
       return Response.json(planningResponse);
     }
     return Response.json(scenarioPayload);
@@ -207,6 +357,7 @@ function installFetchMock(planningResponse = planPayload) {
 describe('App', () => {
   beforeEach(() => {
     leafletMockState.handlers = {};
+    window.history.pushState({}, '', '/');
   });
 
   it('renders scenario layers and random generation controls', async () => {
@@ -225,6 +376,37 @@ describe('App', () => {
       'data-url',
       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     );
+  });
+
+  it('shows a history entry point and current planning title after a successful plan', async () => {
+    installFetchMock(
+      { ...planPayload, record_id: 42 },
+      { records: [], recordsAfterPlan: [historyRecordSummary] },
+    );
+
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: '随机生成场景' }));
+    await userEvent.click(screen.getByRole('button', { name: '规划路线' }));
+
+    expect(await screen.findByText('历史规划 A')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '查看规划历史' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '查看规划记录 42' })).not.toBeInTheDocument();
+  });
+
+  it('renders base graph edges with stronger non-directional styling', async () => {
+    installFetchMock();
+
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: '随机生成场景' }));
+
+    const graphEdge = screen.getAllByTestId('graph-polyline')[0];
+
+    expect(graphEdge).toHaveAttribute('data-class-name', 'graph-edge');
+    expect(graphEdge).toHaveAttribute('data-color', '#334155');
+    expect(graphEdge).toHaveAttribute('data-weight', '3');
+    expect(graphEdge).toHaveAttribute('data-opacity', '0.85');
+    expect(graphEdge).not.toHaveAttribute('data-dash-array');
+    expect(graphEdge.getAttribute('data-class-name')).not.toContain('selected-route-flow');
   });
 
   it('advances time and displays planned route metrics', async () => {
@@ -288,6 +470,145 @@ describe('App', () => {
     expect(secondRouteCard).toHaveAttribute('aria-pressed', 'false');
     expect(routeLines).toHaveLength(3);
     expect(routeLines.every((line) => line.getAttribute('data-color') === '#16a34a')).toBe(true);
+  });
+
+  it('renders selected route segments as directional flowing dashed lines', async () => {
+    installFetchMock(overlappingPlanPayload);
+
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: '随机生成场景' }));
+    await userEvent.click(screen.getByRole('button', { name: '规划路线' }));
+
+    await screen.findByRole('button', { name: '选择路线 vehicle-1' });
+    const routeLines = screen.getAllByTestId('route-polyline');
+    const graphLines = screen.getAllByTestId('graph-polyline');
+
+    expect(routeLines).toHaveLength(3);
+    expect(
+      routeLines.every((line) =>
+        line.getAttribute('data-class-name')?.includes('selected-route-flow'),
+      ),
+    ).toBe(true);
+    expect(routeLines.every((line) => line.getAttribute('data-dash-array') === '10 8')).toBe(
+      true,
+    );
+    const firstSegmentPositions = JSON.parse(routeLines[0].getAttribute('data-positions') ?? '[]');
+    expect(firstSegmentPositions[0]).toEqual([31.22, 121.46]);
+    expect(firstSegmentPositions.at(-1)).toEqual([31.225, 121.465]);
+    expect(graphLines.every((line) => !line.getAttribute('data-class-name')?.includes('flow'))).toBe(
+      true,
+    );
+  });
+
+  it('navigates from the history page to restore a planning record as the current map and plan', async () => {
+    const fetchMock = installFetchMock(planPayload, { records: [historyRecordSummary] });
+    window.history.pushState({}, '', '/history');
+
+    render(<App />);
+    const historyCard = await screen.findByRole('button', { name: '查看规划记录 42' });
+    expect(within(historyCard).getByText('历史规划 A')).toBeInTheDocument();
+    expect(within(historyCard).getByText('场景 历史记录场景')).toBeInTheDocument();
+    expect(within(historyCard).getByText('模拟时间 4')).toBeInTheDocument();
+    expect(within(historyCard).getByText('路线 1')).toBeInTheDocument();
+    expect(within(historyCard).getByText('4.20 km / 1.26 L / 2.91 kg')).toBeInTheDocument();
+
+    await userEvent.click(historyCard);
+
+    expect(window.location.pathname).toBe('/');
+    expect(window.location.search).toBe('?record_id=42');
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/planning-records/42/restore',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(await screen.findByText('模拟时间: 4')).toBeInTheDocument();
+    expect(screen.getByText('总距离: 4.20 km')).toBeInTheDocument();
+    const routeCard = screen.getByRole('button', { name: '选择路线 history-vehicle-1' });
+    expect(routeCard).toHaveAttribute('aria-pressed', 'true');
+    expect(within(routeCard).getByText('1 回收 history-bin-1 · 91%')).toBeInTheDocument();
+    expect(screen.getAllByTestId('route-polyline')).toHaveLength(2);
+    expect(screen.getAllByTestId('route-polyline')[0]).toHaveAttribute('data-color', '#2563eb');
+    expect(
+      screen
+        .getAllByTestId('circle-marker')
+        .some((marker) => marker.textContent?.includes('history-bin-1')),
+    ).toBe(true);
+  });
+
+  it('restores a planning history record from a direct record link', async () => {
+    const fetchMock = installFetchMock(planPayload, { records: [historyRecordSummary] });
+    window.history.pushState({}, '', '/?record_id=42');
+
+    render(<App />);
+
+    expect(await screen.findByText('历史规划 A')).toBeInTheDocument();
+    expect(screen.getByText('模拟时间: 4')).toBeInTheDocument();
+    expect(screen.getByText('总距离: 4.20 km')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/planning-records/42/restore',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('renames a planning record inline on the history page without restoring it', async () => {
+    const fetchMock = installFetchMock(planPayload, { records: [historyRecordSummary] });
+    window.history.pushState({}, '', '/history');
+
+    render(<App />);
+    const historyCard = await screen.findByRole('button', { name: '查看规划记录 42' });
+
+    await userEvent.click(within(historyCard).getByRole('button', { name: '重命名规划记录 42' }));
+    const titleInput = screen.getByLabelText('规划结果名称');
+    await userEvent.clear(titleInput);
+    await userEvent.type(titleInput, '周末清运方案');
+    await userEvent.click(screen.getByRole('button', { name: '保存规划记录 42' }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/planning-records/42',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ title: '周末清运方案' }),
+      }),
+    );
+    expect(await screen.findByText('周末清运方案')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/history');
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/planning-records/42/restore',
+      expect.anything(),
+    );
+  });
+
+  it('clears a restored planning result when simulation advances', async () => {
+    installFetchMock(planPayload, { records: [historyRecordSummary] });
+    window.history.pushState({}, '', '/?record_id=42');
+
+    render(<App />);
+    expect(await screen.findByText('总距离: 4.20 km')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: '推进时间' }));
+
+    await waitFor(() => expect(screen.queryByText('总距离: 4.20 km')).not.toBeInTheDocument());
+    expect(screen.getByText('生成场景并点击规划路线后，这里会显示多车辆路径和指标。')).toBeInTheDocument();
+  });
+
+  it('defines CSS for selected route flow and reduced-motion fallback', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toContain('.selected-route-flow');
+    expect(styles).toContain('stroke-dasharray: 10 8');
+    expect(styles).toContain('@keyframes route-flow');
+    expect(styles).toContain('stroke-dashoffset');
+    expect(styles).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(styles).toContain('animation: none');
+  });
+
+  it('defines CSS for single-screen home layout and route result scroll window', () => {
+    const styles = readFileSync('src/styles.css', 'utf8');
+
+    expect(styles).toContain('height: 100vh');
+    expect(styles).toContain('overflow: hidden');
+    expect(styles).toContain('.panel-scroll');
+    expect(styles).toContain('overflow-y: auto');
+    expect(styles).toContain('.route-scroll-window');
   });
 
   it('updates the selected route card and highlighted map route when another route is selected', async () => {
