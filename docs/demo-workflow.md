@@ -35,6 +35,16 @@ export GREEN_AGENT_DATABASE_URL='mysql+pymysql://root:135790@127.0.0.1:3306/gree
 make dev-backend
 ```
 
+如需演示 AI 规划助手，在项目根目录创建本地 `.env` 并填入 OpenAI-compatible 服务端配置：
+
+```bash
+AI_ASSISTANT_BASE_URL=https://api.example.com/v1
+AI_ASSISTANT_API_KEY=replace-with-your-server-side-key
+AI_ASSISTANT_MODEL=your-chat-model
+```
+
+这些变量只由后端使用。`AI_ASSISTANT_API_KEY` 必须使用真实部署环境自己的服务端密钥，不要提交到仓库，也不要放入前端环境变量。
+
 ## 页面演示顺序
 
 1. 打开前端页面，查看 React Leaflet 地图、场景统计和规划结果面板。
@@ -42,9 +52,10 @@ make dev-backend
 3. 确认场景包含 30 个垃圾桶、5 辆车、3 个处理厂，图状态为“可规划”。
 4. 点击“推进时间”，观察垃圾桶满溢率状态刷新。
 5. 点击“规划路线”，查看不同颜色车辆路线、总距离、油耗、碳排放和任务顺序；本次成功规划会自动写入“规划历史”。
-6. 在“规划历史”中选择一条记录，确认地图恢复该记录保存的图结构和车辆线路。
-7. 恢复记录后继续点击“推进时间”或编辑图结构，确认旧规划结果被清空；再次点击“规划路线”会基于恢复后的当前场景创建新历史记录。
-8. 使用“添加垃圾桶 / 添加车辆 / 添加处理厂 / 添加边”演示自定义图编辑。
+6. 打开右下角 AI 规划助手，围绕当前规划结果提问，观察流式回答；没有规划结果时，助手会提示先规划路线。
+7. 在“规划历史”中选择一条记录，确认地图恢复该记录保存的图结构和车辆线路。
+8. 恢复记录后继续点击“推进时间”或编辑图结构，确认旧规划结果和 AI 对话被清空；再次点击“规划路线”会基于恢复后的当前场景创建新历史记录。
+9. 使用“添加垃圾桶 / 添加车辆 / 添加处理厂 / 添加边”演示自定义图编辑。
 
 ## API 示例
 
@@ -96,6 +107,14 @@ curl -X POST http://127.0.0.1:8000/api/planning-records/1/restore
 curl -X POST http://127.0.0.1:8000/api/scenarios/reset \
   -H 'Content-Type: application/json' \
   -d '{"seed": 202613}'
+```
+
+AI 规划助手流式聊天：
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/api/ai-assistant/chat/stream \
+  -H 'Content-Type: application/json' \
+  -d '{"record_id": 1, "messages": [{"role": "user", "content": "总结这次规划结果"}]}'
 ```
 
 FastAPI 自动文档：
