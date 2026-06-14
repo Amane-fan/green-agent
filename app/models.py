@@ -224,3 +224,33 @@ class PlanningRecordRestoreResponse(BaseModel):
     record: PlanningRecordSummary
     scenario: Scenario
     plan: PlanningResult
+
+
+class AIAssistantMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+    @field_validator("content")
+    @classmethod
+    def require_content(cls, value: str) -> str:
+        content = value.strip()
+        if not content:
+            raise ValueError("AI assistant message content cannot be blank")
+        return content
+
+
+class AIAssistantChatRequest(BaseModel):
+    record_id: int = Field(gt=0)
+    messages: list[AIAssistantMessage]
+
+    @field_validator("messages")
+    @classmethod
+    def require_messages_and_last_user_message(
+        cls,
+        value: list[AIAssistantMessage],
+    ) -> list[AIAssistantMessage]:
+        if not value:
+            raise ValueError("AI assistant messages cannot be empty")
+        if value[-1].role != "user":
+            raise ValueError("AI assistant last message must be from user")
+        return value

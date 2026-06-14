@@ -6,10 +6,20 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
+from app.ai_assistant import (
+    AIAssistantConfigError,
+    AIModelError,
+    build_planning_context,
+    encode_sse_event,
+    read_ai_assistant_config,
+    stream_openai_chat_completions,
+)
 from app.graph import validate_graph
 from app.knowledge import KnowledgePool
 from app.models import (
+    AIAssistantChatRequest,
     PlanningRecordDetail,
     PlanningRecordRenameRequest,
     PlanningRecordRestoreResponse,
@@ -160,3 +170,31 @@ def post_restore_planning_record(record_id: int) -> PlanningRecordRestoreRespons
         return knowledge_pool.restore_planning_record(record_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/ai-assistant/chat/stream")
+async def post_ai_assistant_chat_stream(request: AIAssistantChatRequest) -> StreamingResponse:
+    try:
+        record = knowledge_pool.get_planning_record(request.record_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    try:
+        config = read_ai_assistant_config()
+    except AIAssistantConfigError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    planning_context = build_planning_context(record)
+
+    async def event_stream():
+        try:
+            async for event in stream_openai_chat_completions(
+                config,
+                planning_context,
+                request.messages,
+            ):
+                yield encode_sse_event(event)
+        except AIModelError as exc:
+            yield encode_sse_event({"error": str(exc)})
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
