@@ -192,6 +192,11 @@
         align-items: center;
       }
 
+      .slide.visual-heavy.media-emphasis {
+        grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+        gap: 14px;
+      }
+
       .slide.close {
         place-items: center;
         text-align: center;
@@ -594,6 +599,10 @@
       .slide.two-col > .media-frame,
       .slide.visual-heavy > .media-frame {
         align-self: stretch;
+      }
+
+      .slide.media-emphasis > .media-frame {
+        margin: -8px -10px -8px 0;
       }
 
       .media-frame img {
@@ -1141,12 +1150,20 @@
           overflow: visible;
         }
 
+        .slide.visual-heavy.media-emphasis {
+          grid-template-columns: 1fr;
+        }
+
         .slide:not(.active) {
           display: none;
         }
 
         .media-frame {
           min-height: 220px;
+        }
+
+        .slide.media-emphasis > .media-frame {
+          margin: 0;
         }
 
         .agent-flow,
@@ -1440,7 +1457,7 @@ remaining_capacity <span class="k">&gt;=</span> estimated_volume</div>
         </article>
 
         <!-- 7. ALGORITHM 2 (GA) -->
-        <article class="slide visual-heavy" data-title="算法②·遗传算法" data-section="实现">
+        <article class="slide visual-heavy media-emphasis" data-title="算法②·遗传算法" data-section="实现">
           <div>
             <p class="eyebrow" data-reveal>05 / 路径规划实现 B · 核心</p>
             <h2 data-reveal>用<span class="grad">遗传算法</span>优化单车收运顺序</h2>
