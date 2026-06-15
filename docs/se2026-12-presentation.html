@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SE2026-12 绿运先锋汇报</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8f5;
+        --paper: #ffffff;
+        --ink: #17211b;
+        --muted: #617069;
+        --line: #dce4dc;
+        --green: #1f8a4c;
+        --green-2: #63a86d;
+        --blue: #2563eb;
+        --amber: #b7791f;
+        --red: #c2413d;
+        --shadow: 0 18px 55px rgba(33, 48, 38, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family:
+          "Inter",
+          "PingFang SC",
+          "Microsoft YaHei",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background:
+          radial-gradient(circle at 18% 16%, rgba(99, 168, 109, 0.14), transparent 30%),
+          linear-gradient(135deg, #fbfcf8 0%, var(--bg) 100%);
+        color: var(--ink);
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .deck {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px clamp(18px, 3vw, 38px);
+        color: var(--muted);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        color: var(--ink);
+      }
+
+      .brand-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background:
+          linear-gradient(145deg, rgba(31, 138, 76, 0.95), rgba(37, 99, 235, 0.88));
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 18px;
+      }
+
+      .timer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+      }
+
+      .progress {
+        width: min(28vw, 280px);
+        height: 8px;
+        background: #e8eee8;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .progress span {
+        display: block;
+        height: 100%;
+        width: 12.5%;
+        background: linear-gradient(90deg, var(--green), var(--blue));
+        border-radius: inherit;
+        transition: width 0.2s ease;
+      }
+
+      .stage {
+        width: min(1180px, calc(100vw - 44px));
+        height: min(680px, calc(100vh - 136px));
+        min-height: 540px;
+        margin: 0 auto;
+        position: relative;
+      }
+
+      .slide {
+        position: absolute;
+        inset: 0;
+        display: none;
+        grid-template-columns: 1fr;
+        gap: 26px;
+        padding: clamp(30px, 4vw, 52px);
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(220, 228, 220, 0.92);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .slide.active {
+        display: grid;
+      }
+
+      .slide.two-col {
+        grid-template-columns: 1.04fr 0.96fr;
+        align-items: center;
+      }
+
+      .slide.compact {
+        gap: 18px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--green);
+        font-size: 15px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 18px;
+        font-size: clamp(46px, 6vw, 74px);
+        line-height: 1.04;
+      }
+
+      h2 {
+        margin-bottom: 18px;
+        font-size: clamp(34px, 4vw, 50px);
+        line-height: 1.1;
+      }
+
+      h3 {
+        margin-bottom: 8px;
+        font-size: 22px;
+      }
+
+      .lead {
+        color: var(--muted);
+        font-size: clamp(20px, 2.2vw, 26px);
+        line-height: 1.55;
+        max-width: 760px;
+      }
+
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 28px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid #d5e0d7;
+        background: #f4f8f2;
+        color: #345142;
+        font-weight: 700;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+        background: #fbfdf9;
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--ink);
+        font-size: 18px;
+      }
+
+      .card p,
+      .note,
+      li {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      ul,
+      ol {
+        margin: 0;
+        padding-left: 22px;
+      }
+
+      li + li {
+        margin-top: 10px;
+      }
+
+      .highlight {
+        color: var(--green);
+        font-weight: 800;
+      }
+
+      .diagram {
+        display: grid;
+        gap: 12px;
+      }
+
+      .agent-flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .agent {
+        position: relative;
+        min-height: 116px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px 12px;
+        background: linear-gradient(180deg, #ffffff 0%, #f6faf3 100%);
+      }
+
+      .agent::after {
+        content: "→";
+        position: absolute;
+        top: 42%;
+        right: -13px;
+        color: var(--green);
+        font-weight: 900;
+        z-index: 1;
+      }
+
+      .agent:last-child::after {
+        content: "";
+      }
+
+      .agent span {
+        display: block;
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 8px;
+      }
+
+      .agent b {
+        display: block;
+        font-size: 17px;
+        margin-bottom: 7px;
+      }
+
+      .agent small {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .flow-panel {
+        border: 1px dashed #aab8ae;
+        border-radius: 8px;
+        padding: 18px;
+        background: #f9fbf7;
+      }
+
+      .formula {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .formula code,
+      .codebox {
+        display: block;
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: #17211b;
+        color: #eaf8ed;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 15px;
+        line-height: 1.55;
+        white-space: pre-wrap;
+      }
+
+      .placeholder {
+        min-height: 260px;
+        border: 2px dashed #a9baad;
+        border-radius: 8px;
+        background:
+          linear-gradient(135deg, rgba(31, 138, 76, 0.08), rgba(37, 99, 235, 0.08)),
+          #fbfdf9;
+        display: grid;
+        place-items: center;
+        padding: 22px;
+        text-align: center;
+      }
+
+      .placeholder b {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--green);
+        font-size: 22px;
+      }
+
+      .placeholder span {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .metric {
+        border-radius: 8px;
+        padding: 16px;
+        background: #f4f8f2;
+        border: 1px solid #dbe7dc;
+      }
+
+      .metric b {
+        display: block;
+        color: var(--green);
+        font-size: 28px;
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .route-sketch {
+        position: relative;
+        min-height: 360px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background:
+          linear-gradient(#eff5ed 1px, transparent 1px),
+          linear-gradient(90deg, #eff5ed 1px, transparent 1px),
+          #fbfdf9;
+        background-size: 38px 38px;
+      }
+
+      .route-sketch svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .node-dot {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        box-shadow: 0 8px 20px rgba(23, 33, 27, 0.18);
+      }
+
+      .node-dot.vehicle {
+        background: var(--blue);
+      }
+
+      .node-dot.bin {
+        background: var(--green);
+      }
+
+      .node-dot.facility {
+        background: var(--amber);
+      }
+
+      .caption {
+        position: absolute;
+        left: 18px;
+        bottom: 14px;
+        right: 18px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px clamp(18px, 3vw, 38px);
+      }
+
+      .nav {
+        display: flex;
+        gap: 10px;
+      }
+
+      .nav button {
+        width: 42px;
+        height: 36px;
+        border: 1px solid #cfdbd0;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+      }
+
+      .nav button:hover {
+        border-color: var(--green);
+      }
+
+      .count {
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .speaker {
+        border-left: 4px solid var(--green);
+        padding: 10px 14px;
+        background: #f4f8f2;
+        color: #3a5344;
+        line-height: 1.55;
+        font-size: 15px;
+      }
+
+      .tagline {
+        position: absolute;
+        right: 46px;
+        bottom: 38px;
+        color: rgba(23, 33, 27, 0.12);
+        font-weight: 900;
+        font-size: 92px;
+        line-height: 0.9;
+        pointer-events: none;
+      }
+
+      @media (max-width: 900px) {
+        .stage {
+          height: auto;
+          min-height: calc(100vh - 138px);
+        }
+
+        .slide,
+        .slide.two-col {
+          position: relative;
+          min-height: calc(100vh - 138px);
+          grid-template-columns: 1fr;
+          overflow: visible;
+        }
+
+        .agent-flow,
+        .grid,
+        .grid.two,
+        .metric-row {
+          grid-template-columns: 1fr;
+        }
+
+        .agent::after {
+          display: none;
+        }
+
+        .timer .hint {
+          display: none;
+        }
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+
+        .topbar,
+        .footer {
+          display: none;
+        }
+
+        .deck {
+          display: block;
+        }
+
+        .stage {
+          width: auto;
+          height: auto;
+        }
+
+        .slide {
+          position: relative;
+          display: grid !important;
+          min-height: 100vh;
+          margin: 0 0 24px;
+          box-shadow: none;
+          break-after: page;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">G</div>
+          <span>SE2026-12 绿运先锋</span>
+        </div>
+        <div class="timer">
+          <span class="hint">建议汇报时长：4分30秒 - 5分钟</span>
+          <div class="progress" aria-label="汇报进度"><span id="progressBar"></span></div>
+        </div>
+      </header>
+
+      <section class="stage" aria-live="polite">
+        <article class="slide active two-col" data-title="封面">
+          <div>
+            <p class="eyebrow">软件工程课程大作业汇报</p>
+            <h1>绿运先锋</h1>
+            <p class="lead">
+              垃圾分类收运多智能体路径优化系统。系统将垃圾桶监测、收运车辆和处理厂抽象为协作 Agent，
+              在容量、类别、可达性和碳排放约束下规划车辆收运路线。
+            </p>
+            <div class="meta-row">
+              <span class="pill">LangGraph 多智能体编排</span>
+              <span class="pill">遗传算法路径排序</span>
+              <span class="pill">React 地图可视化</span>
+              <span class="pill">模拟满溢数据</span>
+            </div>
+          </div>
+          <div class="placeholder">
+            <div>
+              <b>[贴图位置：系统首页或路线地图总览]</b>
+              <span>建议放一张前端地图截图，能看到垃圾桶、车辆、处理厂和规划路线。</span>
+            </div>
+          </div>
+          <div class="tagline">GREEN<br />AGENT</div>
+        </article>
+
+        <article class="slide two-col" data-title="问题与目标">
+          <div>
+            <p class="eyebrow">01 / 问题背景</p>
+            <h2>分类收运的核心难点是“多约束路径规划”</h2>
+            <ul>
+              <li>不同类别垃圾不能混收，车辆和处理厂都存在类别匹配约束。</li>
+              <li>垃圾桶满溢程度随时间变化，系统需要提前识别即将达到阈值的点位。</li>
+              <li>城市道路抽象为图结构，车辆必须能从当前位置到达垃圾桶，再到达处理厂。</li>
+              <li>路径顺序影响总里程、油耗和碳排放，是本项目重点优化对象。</li>
+            </ul>
+            <div class="speaker">
+              讲述重点：先说明这是一个车辆路径问题，但比普通最短路多了分类、容量、可达性和满溢优先级。
+            </div>
+          </div>
+          <div class="grid">
+            <div class="card">
+              <strong>输入</strong>
+              <p>垃圾桶位置、满溢率、容量、垃圾类别、道路边权、车辆能力、处理厂接收范围。</p>
+            </div>
+            <div class="card">
+              <strong>处理</strong>
+              <p>Agent 编排任务，筛选待收运垃圾桶，做可达性分析并规划每辆车路线。</p>
+            </div>
+            <div class="card">
+              <strong>输出</strong>
+              <p>车辆收运顺序、完整路径节点、距离、油耗、碳排放和未分配原因。</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide compact" data-title="系统架构">
+          <div>
+            <p class="eyebrow">02 / 系统架构</p>
+            <h2>前端可视化 + 后端规划服务 + 知识共享池</h2>
+          </div>
+          <div class="grid two">
+            <div class="flow-panel">
+              <h3>技术栈与模块</h3>
+              <ul>
+                <li><span class="highlight">React + React Leaflet</span>：展示地图点位、道路边和车辆路线。</li>
+                <li><span class="highlight">FastAPI</span>：提供场景生成、时间推进、路线规划和历史记录 API。</li>
+                <li><span class="highlight">LangGraph</span>：串联监测、知识、编排、可达性、车辆处理厂匹配 Agent。</li>
+                <li><span class="highlight">NetworkX</span>：道路图建模、连通性校验和最短路径计算。</li>
+                <li><span class="highlight">KnowledgePool</span>：保存满溢历史、预测结果、规划结果和场景快照。</li>
+              </ul>
+            </div>
+            <div class="placeholder">
+              <div>
+                <b>[贴图位置：系统架构图]</b>
+                <span>建议绘制“React 前端 → FastAPI → LangGraph 工作流 → 规划算法 / KnowledgePool”的结构图。</span>
+              </div>
+            </div>
+          </div>
+          <div class="speaker">
+            讲述重点：架构不是单纯调用算法，而是把感知、预测、任务拆分、路线优化和历史数据沉淀成闭环。
+          </div>
+        </article>
+
+        <article class="slide compact" data-title="Agent 编排">
+          <div>
+            <p class="eyebrow">03 / 多智能体任务编排</p>
+            <h2>LangGraph 将规划流程拆成 5 个 Agent 节点</h2>
+          </div>
+          <div class="agent-flow" aria-label="LangGraph Agent 流程">
+            <div class="agent">
+              <span>Agent 1</span>
+              <b>Monitoring</b>
+              <small>计算未来 3 步预测，筛选当前或预测满溢率超过阈值的垃圾桶。</small>
+            </div>
+            <div class="agent">
+              <span>Agent 2</span>
+              <b>Knowledge</b>
+              <small>加载当前场景和预测结果，为后续规划提供共享数据。</small>
+            </div>
+            <div class="agent">
+              <span>Agent 3</span>
+              <b>Task Orchestrator</b>
+              <small>按垃圾类别组织待收运任务，准备车辆分配。</small>
+            </div>
+            <div class="agent">
+              <span>Agent 4</span>
+              <b>Reachability</b>
+              <small>基于道路图准备可达性分析，过滤不可达点位。</small>
+            </div>
+            <div class="agent">
+              <span>Agent 5</span>
+              <b>Vehicle Facility</b>
+              <small>执行车辆分配、路径排序和处理厂选择，输出最终路线。</small>
+            </div>
+          </div>
+          <div class="codebox">START → monitoring → knowledge → task_orchestrator → reachability → vehicle_facility → END</div>
+          <div class="speaker">
+            讲述重点：每一步都会写入 trace，前端可以解释“为什么这些垃圾桶被收运、为什么有些未分配”。
+          </div>
+        </article>
+
+        <article class="slide two-col" data-title="路径规划一">
+          <div>
+            <p class="eyebrow">04 / 路径规划实现 A</p>
+            <h2>先做任务筛选与车辆分配，再做路线排序</h2>
+            <ol>
+              <li><span class="highlight">预测满溢</span>：根据当前满溢率和增长趋势计算未来 3 步预测值。</li>
+              <li><span class="highlight">筛选任务</span>：当前或预测值超过阈值，例如 70%，进入待收运集合。</li>
+              <li><span class="highlight">排序优先级</span>：待收运垃圾桶按满溢率从高到低处理。</li>
+              <li><span class="highlight">车辆候选</span>：必须类别匹配、路径可达、剩余容量足够。</li>
+              <li><span class="highlight">分配策略</span>：优先选择任务数更少、距离更近的车辆，兼顾负载均衡。</li>
+            </ol>
+          </div>
+          <div>
+            <div class="codebox">候选车辆条件：
+vehicle.supported_waste_type == bin.waste_type
+has_path(vehicle.node_id, bin.id)
+has_path(bin.id, compatible_facility.node_id)
+remaining_capacity >= estimated_volume</div>
+            <div class="formula">
+              <code>estimated_volume = bin.capacity × fill_rate / 100</code>
+              <code>vehicle = min(任务数量, 到垃圾桶距离, 随机扰动)</code>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide two-col" data-title="路径规划二">
+          <div>
+            <p class="eyebrow">05 / 路径规划实现 B</p>
+            <h2>重点：用遗传算法优化单车收运顺序</h2>
+            <ul>
+              <li>当某辆车分配到超过 2 个垃圾桶时，进入遗传算法排序。</li>
+              <li>初始种群包含 1 条贪心路径和 23 条随机排列，兼顾质量和搜索空间。</li>
+              <li>每代保留适应度最好的 8 条路线作为父代。</li>
+              <li>交叉方式为“保留左父代前缀 + 按右父代顺序补齐剩余节点”。</li>
+              <li>25% 概率执行两点交换变异，避免陷入局部最优。</li>
+              <li>迭代 35 代后选择适应度最低的顺序作为收运顺序。</li>
+            </ul>
+          </div>
+          <div>
+            <div class="route-sketch">
+              <svg viewBox="0 0 500 360" role="img" aria-label="遗传算法路线示意">
+                <path d="M70 285 C145 210 160 92 255 92 S360 125 430 58" fill="none" stroke="#2563eb" stroke-width="5" stroke-linecap="round" />
+                <path d="M70 285 C120 305 208 280 270 220 S360 150 430 58" fill="none" stroke="#1f8a4c" stroke-width="4" stroke-dasharray="10 9" stroke-linecap="round" />
+              </svg>
+              <div class="node-dot vehicle" style="left: 14%; top: 79%">V</div>
+              <div class="node-dot bin" style="left: 32%; top: 47%">1</div>
+              <div class="node-dot bin" style="left: 51%; top: 26%">2</div>
+              <div class="node-dot bin" style="left: 68%; top: 42%">3</div>
+              <div class="node-dot facility" style="left: 86%; top: 16%">F</div>
+              <div class="caption">蓝线表示被选中的较优顺序，虚线表示其他候选顺序。</div>
+            </div>
+            <div class="formula">
+              <code>fitness = route_distance + delay_penalty × 0.01</code>
+              <code>delay_penalty = Σ((visit_order + 1) × fill_rate)</code>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide two-col" data-title="路径输出">
+          <div>
+            <p class="eyebrow">06 / 输出指标与可视化</p>
+            <h2>从“收运顺序”还原为可展示的完整道路路径</h2>
+            <ul>
+              <li>路径序列为：车辆当前位置 → 多个垃圾桶 → 兼容处理厂。</li>
+              <li>相邻节点之间调用 NetworkX 最短路径，拼接成完整 `path_node_ids`。</li>
+              <li>距离累加为路线总里程，油耗按车辆 `fuel_per_km` 估算。</li>
+              <li>碳排放按 `estimated_fuel × 2.31 kg/L` 估算。</li>
+              <li>无法分配的任务给出原因：不可达、容量不足或类别不匹配。</li>
+            </ul>
+            <div class="metric-row">
+              <div class="metric"><b>distance</b><span>总行驶距离</span></div>
+              <div class="metric"><b>fuel</b><span>预估油耗</span></div>
+              <div class="metric"><b>CO₂</b><span>预估碳排放</span></div>
+            </div>
+          </div>
+          <div class="placeholder">
+            <div>
+              <b>[贴图位置：规划路线地图截图]</b>
+              <span>建议截图包含不同颜色车辆路线、任务顺序编号和处理厂终点。</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide two-col" data-title="保障与演示">
+          <div>
+            <p class="eyebrow">07 / 工程保障与演示价值</p>
+            <h2>系统不仅能规划路线，还能解释和复现实验结果</h2>
+            <div class="grid two">
+              <div class="card">
+                <strong>可达性分析</strong>
+                <p>道路图先做连通性校验；分配前使用 `nx.has_path` 检查车辆、垃圾桶、处理厂之间是否可达。</p>
+              </div>
+              <div class="card">
+                <strong>知识共享池</strong>
+                <p>保存 `fill_history`、`predictions`、`planning_records`，支持历史路线恢复和结果复盘。</p>
+              </div>
+              <div class="card">
+                <strong>测试覆盖</strong>
+                <p>后端测试覆盖类别约束、不可达任务、容量限制、高满溢优先级和 API 编排。</p>
+              </div>
+              <div class="card">
+                <strong>课堂演示</strong>
+                <p>随机生成场景、推进时间、规划路线、查看历史记录，形成完整演示闭环。</p>
+              </div>
+            </div>
+          </div>
+          <div class="placeholder">
+            <div>
+              <b>[贴图位置：规划结果面板 / 历史记录截图]</b>
+              <span>建议放指标卡片和历史记录列表，突出可复现与可解释。</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="slide two-col" data-title="总结">
+          <div>
+            <p class="eyebrow">08 / 总结</p>
+            <h2>围绕路径规划完成了一个可演示的多智能体系统</h2>
+            <ul>
+              <li>用 LangGraph 将监测、知识、任务编排、可达性和车辆规划拆成清晰 Agent 流程。</li>
+              <li>用 NetworkX 把道路转为图，支持连通性检查和最短路径查询。</li>
+              <li>路径规划重点采用“约束分配 + 遗传算法排序”，兼顾满溢紧急度和行驶距离。</li>
+              <li>前端地图展示车辆路线、指标和历史记录，满足课程系统演示要求。</li>
+            </ul>
+            <div class="speaker">
+              结束语：本项目把垃圾分类收运从静态地图展示推进到可解释、可复现、可优化的调度系统。
+            </div>
+          </div>
+          <div class="flow-panel">
+            <h3>5 分钟汇报建议分配</h3>
+            <ol>
+              <li>背景目标：35 秒</li>
+              <li>架构与 Agent：75 秒</li>
+              <li>路径规划实现：150 秒</li>
+              <li>可视化、知识池、测试：55 秒</li>
+              <li>总结：25 秒</li>
+            </ol>
+            <div class="placeholder" style="min-height: 170px; margin-top: 18px">
+              <div>
+                <b>[贴图位置：最终演示合成图]</b>
+                <span>可放一张包含地图、路线指标、Agent trace 的综合截图。</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <footer class="footer">
+        <div class="count"><span id="slideIndex">1</span> / <span id="slideTotal">8</span></div>
+        <div class="nav" aria-label="幻灯片导航">
+          <button type="button" id="prevBtn" aria-label="上一页">‹</button>
+          <button type="button" id="nextBtn" aria-label="下一页">›</button>
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const slideIndex = document.getElementById("slideIndex");
+      const slideTotal = document.getElementById("slideTotal");
+      const progressBar = document.getElementById("progressBar");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      let current = 0;
+
+      function showSlide(index) {
+        current = Math.max(0, Math.min(slides.length - 1, index));
+        slides.forEach((slide, slidePosition) => {
+          slide.classList.toggle("active", slidePosition === current);
+        });
+        slideIndex.textContent = String(current + 1);
+        slideTotal.textContent = String(slides.length);
+        progressBar.style.width = `${((current + 1) / slides.length) * 100}%`;
+        document.title = `${current + 1}/${slides.length} ${slides[current].dataset.title} - SE2026-12 绿运先锋汇报`;
+      }
+
+      prevBtn.addEventListener("click", () => showSlide(current - 1));
+      nextBtn.addEventListener("click", () => showSlide(current + 1));
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+          event.preventDefault();
+          showSlide(current + 1);
+        }
+        if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          showSlide(current - 1);
+        }
+        if (event.key === "Home") {
+          showSlide(0);
+        }
+        if (event.key === "End") {
+          showSlide(slides.length - 1);
+        }
+      });
+
+      showSlide(0);
+    </script>
+  </body>
+</html>
