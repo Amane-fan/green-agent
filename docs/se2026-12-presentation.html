@@ -106,9 +106,9 @@
       }
 
       .stage {
-        width: min(1180px, calc(100vw - 44px));
-        height: min(680px, calc(100vh - 136px));
-        min-height: 540px;
+        width: min(1240px, calc(100vw - 36px));
+        height: min(700px, calc(100vh - 128px));
+        min-height: 560px;
         margin: 0 auto;
         position: relative;
       }
@@ -118,11 +118,11 @@
         inset: 0;
         display: none;
         grid-template-columns: 1fr;
-        gap: 26px;
-        padding: clamp(30px, 4vw, 52px);
+        gap: 18px;
+        padding: clamp(24px, 3.2vw, 38px);
         background: rgba(255, 255, 255, 0.94);
         border: 1px solid rgba(220, 228, 220, 0.92);
-        border-radius: 8px;
+        border-radius: 10px;
         box-shadow: var(--shadow);
         overflow: hidden;
       }
@@ -132,18 +132,31 @@
       }
 
       .slide.two-col {
-        grid-template-columns: 1.04fr 0.96fr;
+        grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
         align-items: center;
       }
 
+      .slide.visual-heavy {
+        grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
+      }
+
+      .slide.close {
+        place-items: center;
+        text-align: center;
+      }
+
+      .slide > * {
+        min-width: 0;
+      }
+
       .slide.compact {
-        gap: 18px;
+        gap: 14px;
       }
 
       .eyebrow {
-        margin: 0 0 12px;
+        margin: 0 0 8px;
         color: var(--green);
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 800;
         text-transform: uppercase;
       }
@@ -156,34 +169,34 @@
       }
 
       h1 {
-        margin-bottom: 18px;
-        font-size: clamp(46px, 6vw, 74px);
+        margin-bottom: 12px;
+        font-size: clamp(44px, 5.2vw, 64px);
         line-height: 1.04;
       }
 
       h2 {
-        margin-bottom: 18px;
-        font-size: clamp(34px, 4vw, 50px);
+        margin-bottom: 12px;
+        font-size: clamp(28px, 3.5vw, 42px);
         line-height: 1.1;
       }
 
       h3 {
-        margin-bottom: 8px;
-        font-size: 22px;
+        margin-bottom: 7px;
+        font-size: 20px;
       }
 
       .lead {
         color: var(--muted);
-        font-size: clamp(20px, 2.2vw, 26px);
-        line-height: 1.55;
+        font-size: clamp(18px, 1.8vw, 22px);
+        line-height: 1.45;
         max-width: 760px;
       }
 
       .meta-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 28px;
+        gap: 8px;
+        margin-top: 20px;
       }
 
       .pill {
@@ -203,32 +216,37 @@
       .grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
+        gap: 12px;
       }
 
       .grid.two {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .grid.stack {
+        grid-template-columns: 1fr;
+      }
+
       .card {
         border: 1px solid var(--line);
         border-radius: 8px;
-        padding: 18px;
+        padding: 14px;
         background: #fbfdf9;
       }
 
       .card strong {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         color: var(--ink);
-        font-size: 18px;
+        font-size: 16px;
       }
 
       .card p,
       .note,
       li {
         color: var(--muted);
-        line-height: 1.55;
+        line-height: 1.42;
+        font-size: 15px;
       }
 
       ul,
@@ -238,17 +256,12 @@
       }
 
       li + li {
-        margin-top: 10px;
+        margin-top: 7px;
       }
 
       .highlight {
         color: var(--green);
         font-weight: 800;
-      }
-
-      .diagram {
-        display: grid;
-        gap: 12px;
       }
 
       .agent-flow {
@@ -260,10 +273,10 @@
 
       .agent {
         position: relative;
-        min-height: 116px;
+        min-height: 104px;
         border: 1px solid var(--line);
         border-radius: 8px;
-        padding: 14px 12px;
+        padding: 12px 10px;
         background: linear-gradient(180deg, #ffffff 0%, #f6faf3 100%);
       }
 
@@ -291,19 +304,19 @@
 
       .agent b {
         display: block;
-        font-size: 17px;
+        font-size: 15px;
         margin-bottom: 7px;
       }
 
       .agent small {
         color: var(--muted);
-        line-height: 1.45;
+        line-height: 1.35;
       }
 
       .flow-panel {
         border: 1px dashed #aab8ae;
         border-radius: 8px;
-        padding: 18px;
+        padding: 14px;
         background: #f9fbf7;
       }
 
@@ -317,50 +330,55 @@
       .codebox {
         display: block;
         border-radius: 8px;
-        padding: 14px 16px;
-        background: #17211b;
-        color: #eaf8ed;
+        padding: 12px 14px;
+        border: 1px solid #d7e7d8;
+        background: linear-gradient(180deg, #fbfdf9 0%, #f1f7ef 100%);
+        color: #244234;
         font-family: "SFMono-Regular", Consolas, monospace;
-        font-size: 15px;
-        line-height: 1.55;
+        font-size: 13.5px;
+        line-height: 1.45;
         white-space: pre-wrap;
       }
 
-      .placeholder {
-        min-height: 260px;
-        border: 2px dashed #a9baad;
-        border-radius: 8px;
-        background:
-          linear-gradient(135deg, rgba(31, 138, 76, 0.08), rgba(37, 99, 235, 0.08)),
-          #fbfdf9;
-        display: grid;
-        place-items: center;
-        padding: 22px;
-        text-align: center;
+      .media-frame {
+        border: 1px solid #d8e7d9;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 14px 34px rgba(33, 48, 38, 0.1);
+        overflow: hidden;
+        min-height: 0;
       }
 
-      .placeholder b {
+      .slide.two-col > .media-frame {
+        align-self: stretch;
+      }
+
+      .media-frame img {
         display: block;
-        margin-bottom: 10px;
-        color: var(--green);
-        font-size: 22px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
 
-      .placeholder span {
-        color: var(--muted);
-        line-height: 1.55;
+      .media-frame.contain img {
+        object-fit: contain;
+        padding: 10px;
+      }
+
+      .media-frame.top img {
+        object-position: center top;
       }
 
       .metric-row {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
-        margin-top: 18px;
+        margin-top: 14px;
       }
 
       .metric {
         border-radius: 8px;
-        padding: 16px;
+        padding: 12px;
         background: #f4f8f2;
         border: 1px solid #dbe7dc;
       }
@@ -368,64 +386,10 @@
       .metric b {
         display: block;
         color: var(--green);
-        font-size: 28px;
+        font-size: 23px;
       }
 
       .metric span {
-        color: var(--muted);
-        font-size: 14px;
-      }
-
-      .route-sketch {
-        position: relative;
-        min-height: 360px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background:
-          linear-gradient(#eff5ed 1px, transparent 1px),
-          linear-gradient(90deg, #eff5ed 1px, transparent 1px),
-          #fbfdf9;
-        background-size: 38px 38px;
-      }
-
-      .route-sketch svg {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-      }
-
-      .node-dot {
-        position: absolute;
-        width: 30px;
-        height: 30px;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        color: #fff;
-        font-size: 13px;
-        font-weight: 800;
-        box-shadow: 0 8px 20px rgba(23, 33, 27, 0.18);
-      }
-
-      .node-dot.vehicle {
-        background: var(--blue);
-      }
-
-      .node-dot.bin {
-        background: var(--green);
-      }
-
-      .node-dot.facility {
-        background: var(--amber);
-      }
-
-      .caption {
-        position: absolute;
-        left: 18px;
-        bottom: 14px;
-        right: 18px;
         color: var(--muted);
         font-size: 14px;
       }
@@ -464,22 +428,30 @@
 
       .speaker {
         border-left: 4px solid var(--green);
-        padding: 10px 14px;
+        padding: 8px 12px;
         background: #f4f8f2;
         color: #3a5344;
-        line-height: 1.55;
-        font-size: 15px;
+        line-height: 1.42;
+        font-size: 14px;
       }
 
       .tagline {
         position: absolute;
-        right: 46px;
-        bottom: 38px;
+        right: 34px;
+        bottom: 26px;
         color: rgba(23, 33, 27, 0.12);
         font-weight: 900;
-        font-size: 92px;
+        font-size: 72px;
         line-height: 0.9;
         pointer-events: none;
+      }
+
+      .closing {
+        max-width: 760px;
+      }
+
+      .closing .lead {
+        margin: 0 auto;
       }
 
       @media (max-width: 900px) {
@@ -489,11 +461,16 @@
         }
 
         .slide,
-        .slide.two-col {
+        .slide.two-col,
+        .slide.visual-heavy {
           position: relative;
           min-height: calc(100vh - 138px);
           grid-template-columns: 1fr;
           overflow: visible;
+        }
+
+        .media-frame {
+          min-height: 240px;
         }
 
         .agent-flow,
@@ -556,13 +533,13 @@
       </header>
 
       <section class="stage" aria-live="polite">
-        <article class="slide active two-col" data-title="封面">
+        <article class="slide active two-col visual-heavy" data-title="封面">
           <div>
             <p class="eyebrow">软件工程课程大作业汇报</p>
             <h1>绿运先锋</h1>
             <p class="lead">
-              垃圾分类收运多智能体路径优化系统。系统将垃圾桶监测、收运车辆和处理厂抽象为协作 Agent，
-              在容量、类别、可达性和碳排放约束下规划车辆收运路线。
+              垃圾分类收运多智能体路径优化系统。系统将垃圾桶、收运车辆和处理厂抽象为协作节点，
+              在满溢率、类别、容量、可达性和碳排放约束下规划收运路线。
             </p>
             <div class="meta-row">
               <span class="pill">LangGraph 多智能体编排</span>
@@ -571,30 +548,26 @@
               <span class="pill">模拟满溢数据</span>
             </div>
           </div>
-          <div class="placeholder">
-            <div>
-              <b>[贴图位置：系统首页或路线地图总览]</b>
-              <span>建议放一张前端地图截图，能看到垃圾桶、车辆、处理厂和规划路线。</span>
-            </div>
+          <div class="media-frame contain">
+            <img src="images/page1.png" alt="绿运先锋系统首页与路线规划结果截图" />
           </div>
           <div class="tagline">GREEN<br />AGENT</div>
         </article>
 
-        <article class="slide two-col" data-title="问题与目标">
+        <article class="slide two-col compact" data-title="问题与目标">
           <div>
             <p class="eyebrow">01 / 问题背景</p>
             <h2>分类收运的核心难点是“多约束路径规划”</h2>
             <ul>
-              <li>不同类别垃圾不能混收，车辆和处理厂都存在类别匹配约束。</li>
-              <li>垃圾桶满溢程度随时间变化，系统需要提前识别即将达到阈值的点位。</li>
-              <li>城市道路抽象为图结构，车辆必须能从当前位置到达垃圾桶，再到达处理厂。</li>
-              <li>路径顺序影响总里程、油耗和碳排放，是本项目重点优化对象。</li>
+              <li>分类约束：车辆、垃圾桶、处理厂必须类别匹配，不能混收。</li>
+              <li>时序约束：满溢率持续变化，需要提前识别即将超阈值的点位。</li>
+              <li>路径约束：道路图必须可达，访问顺序直接影响里程、油耗和碳排放。</li>
             </ul>
             <div class="speaker">
-              讲述重点：先说明这是一个车辆路径问题，但比普通最短路多了分类、容量、可达性和满溢优先级。
+              讲述重点：这是车辆路径问题，但比普通最短路多了分类、容量、可达性和满溢优先级。
             </div>
           </div>
-          <div class="grid">
+          <div class="grid stack">
             <div class="card">
               <strong>输入</strong>
               <p>垃圾桶位置、满溢率、容量、垃圾类别、道路边权、车辆能力、处理厂接收范围。</p>
@@ -610,31 +583,25 @@
           </div>
         </article>
 
-        <article class="slide compact" data-title="系统架构">
+        <article class="slide two-col visual-heavy" data-title="系统架构">
           <div>
             <p class="eyebrow">02 / 系统架构</p>
             <h2>前端可视化 + 后端规划服务 + 知识共享池</h2>
-          </div>
-          <div class="grid two">
             <div class="flow-panel">
               <h3>技术栈与模块</h3>
               <ul>
                 <li><span class="highlight">React + React Leaflet</span>：展示地图点位、道路边和车辆路线。</li>
                 <li><span class="highlight">FastAPI</span>：提供场景生成、时间推进、路线规划和历史记录 API。</li>
                 <li><span class="highlight">LangGraph</span>：串联监测、知识、编排、可达性、车辆处理厂匹配 Agent。</li>
-                <li><span class="highlight">NetworkX</span>：道路图建模、连通性校验和最短路径计算。</li>
-                <li><span class="highlight">KnowledgePool</span>：保存满溢历史、预测结果、规划结果和场景快照。</li>
+                <li><span class="highlight">NetworkX + KnowledgePool</span>：完成图计算，并沉淀场景、预测和规划历史。</li>
               </ul>
             </div>
-            <div class="placeholder">
-              <div>
-                <b>[贴图位置：系统架构图]</b>
-                <span>建议绘制“React 前端 → FastAPI → LangGraph 工作流 → 规划算法 / KnowledgePool”的结构图。</span>
-              </div>
+            <div class="speaker">
+              讲述重点：架构不是单纯调用算法，而是把感知、预测、任务拆分、路线优化和历史数据沉淀成闭环。
             </div>
           </div>
-          <div class="speaker">
-            讲述重点：架构不是单纯调用算法，而是把感知、预测、任务拆分、路线优化和历史数据沉淀成闭环。
+          <div class="media-frame contain">
+            <img src="images/page3.png" alt="绿运先锋系统架构图" />
           </div>
         </article>
 
@@ -647,45 +614,43 @@
             <div class="agent">
               <span>Agent 1</span>
               <b>Monitoring</b>
-              <small>计算未来 3 步预测，筛选当前或预测满溢率超过阈值的垃圾桶。</small>
+              <small>预测未来 3 步满溢率，筛选超阈值垃圾桶。</small>
             </div>
             <div class="agent">
               <span>Agent 2</span>
               <b>Knowledge</b>
-              <small>加载当前场景和预测结果，为后续规划提供共享数据。</small>
+              <small>加载场景、预测和历史记录，提供共享上下文。</small>
             </div>
             <div class="agent">
               <span>Agent 3</span>
               <b>Task Orchestrator</b>
-              <small>按垃圾类别组织待收运任务，准备车辆分配。</small>
+              <small>按垃圾类别组织待收运任务。</small>
             </div>
             <div class="agent">
               <span>Agent 4</span>
               <b>Reachability</b>
-              <small>基于道路图准备可达性分析，过滤不可达点位。</small>
+              <small>基于道路图过滤不可达点位。</small>
             </div>
             <div class="agent">
               <span>Agent 5</span>
               <b>Vehicle Facility</b>
-              <small>执行车辆分配、路径排序和处理厂选择，输出最终路线。</small>
+              <small>完成车辆分配、路径排序和处理厂选择。</small>
             </div>
           </div>
-          <div class="codebox">START → monitoring → knowledge → task_orchestrator → reachability → vehicle_facility → END</div>
           <div class="speaker">
             讲述重点：每一步都会写入 trace，前端可以解释“为什么这些垃圾桶被收运、为什么有些未分配”。
           </div>
         </article>
 
-        <article class="slide two-col" data-title="路径规划一">
+        <article class="slide two-col compact" data-title="路径规划一">
           <div>
             <p class="eyebrow">04 / 路径规划实现 A</p>
             <h2>先做任务筛选与车辆分配，再做路线排序</h2>
             <ol>
-              <li><span class="highlight">预测满溢</span>：根据当前满溢率和增长趋势计算未来 3 步预测值。</li>
-              <li><span class="highlight">筛选任务</span>：当前或预测值超过阈值，例如 70%，进入待收运集合。</li>
-              <li><span class="highlight">排序优先级</span>：待收运垃圾桶按满溢率从高到低处理。</li>
-              <li><span class="highlight">车辆候选</span>：必须类别匹配、路径可达、剩余容量足够。</li>
-              <li><span class="highlight">分配策略</span>：优先选择任务数更少、距离更近的车辆，兼顾负载均衡。</li>
+              <li><span class="highlight">预测与筛选</span>：当前或未来 3 步满溢率超过阈值的垃圾桶进入待收运集合。</li>
+              <li><span class="highlight">优先级</span>：按满溢率从高到低处理，优先解决高风险点位。</li>
+              <li><span class="highlight">候选车辆</span>：类别匹配、路径可达、剩余容量足够才允许分配。</li>
+              <li><span class="highlight">分配策略</span>：优先任务数更少、距离更近的车辆，兼顾负载均衡。</li>
             </ol>
           </div>
           <div>
@@ -701,130 +666,88 @@ remaining_capacity >= estimated_volume</div>
           </div>
         </article>
 
-        <article class="slide two-col" data-title="路径规划二">
+        <article class="slide two-col visual-heavy" data-title="路径规划二">
           <div>
             <p class="eyebrow">05 / 路径规划实现 B</p>
             <h2>重点：用遗传算法优化单车收运顺序</h2>
             <ul>
               <li>当某辆车分配到超过 2 个垃圾桶时，进入遗传算法排序。</li>
-              <li>初始种群包含 1 条贪心路径和 23 条随机排列，兼顾质量和搜索空间。</li>
-              <li>每代保留适应度最好的 8 条路线作为父代。</li>
-              <li>交叉方式为“保留左父代前缀 + 按右父代顺序补齐剩余节点”。</li>
-              <li>25% 概率执行两点交换变异，避免陷入局部最优。</li>
+              <li>初始种群包含贪心路径和随机排列，兼顾初始质量与搜索空间。</li>
+              <li>每代保留优质父代，执行顺序交叉与两点交换变异。</li>
               <li>迭代 35 代后选择适应度最低的顺序作为收运顺序。</li>
             </ul>
-          </div>
-          <div>
-            <div class="route-sketch">
-              <svg viewBox="0 0 500 360" role="img" aria-label="遗传算法路线示意">
-                <path d="M70 285 C145 210 160 92 255 92 S360 125 430 58" fill="none" stroke="#2563eb" stroke-width="5" stroke-linecap="round" />
-                <path d="M70 285 C120 305 208 280 270 220 S360 150 430 58" fill="none" stroke="#1f8a4c" stroke-width="4" stroke-dasharray="10 9" stroke-linecap="round" />
-              </svg>
-              <div class="node-dot vehicle" style="left: 14%; top: 79%">V</div>
-              <div class="node-dot bin" style="left: 32%; top: 47%">1</div>
-              <div class="node-dot bin" style="left: 51%; top: 26%">2</div>
-              <div class="node-dot bin" style="left: 68%; top: 42%">3</div>
-              <div class="node-dot facility" style="left: 86%; top: 16%">F</div>
-              <div class="caption">蓝线表示被选中的较优顺序，虚线表示其他候选顺序。</div>
-            </div>
             <div class="formula">
               <code>fitness = route_distance + delay_penalty × 0.01</code>
               <code>delay_penalty = Σ((visit_order + 1) × fill_rate)</code>
             </div>
           </div>
+          <div class="media-frame contain">
+            <img src="images/page6.png" alt="遗传算法优化单车收运顺序示意图" />
+          </div>
         </article>
 
-        <article class="slide two-col" data-title="路径输出">
+        <article class="slide two-col visual-heavy" data-title="路径输出">
           <div>
             <p class="eyebrow">06 / 输出指标与可视化</p>
             <h2>从“收运顺序”还原为可展示的完整道路路径</h2>
             <ul>
               <li>路径序列为：车辆当前位置 → 多个垃圾桶 → 兼容处理厂。</li>
               <li>相邻节点之间调用 NetworkX 最短路径，拼接成完整 `path_node_ids`。</li>
-              <li>距离累加为路线总里程，油耗按车辆 `fuel_per_km` 估算。</li>
-              <li>碳排放按 `estimated_fuel × 2.31 kg/L` 估算。</li>
-              <li>无法分配的任务给出原因：不可达、容量不足或类别不匹配。</li>
+              <li>输出距离、油耗、碳排放，并解释不可达、容量不足或类别不匹配等未分配原因。</li>
             </ul>
             <div class="metric-row">
-              <div class="metric"><b>distance</b><span>总行驶距离</span></div>
-              <div class="metric"><b>fuel</b><span>预估油耗</span></div>
-              <div class="metric"><b>CO₂</b><span>预估碳排放</span></div>
+              <div class="metric"><b>139.03</b><span>km 总距离</span></div>
+              <div class="metric"><b>30.15</b><span>L 预估油耗</span></div>
+              <div class="metric"><b>69.65</b><span>kg 碳排放</span></div>
             </div>
           </div>
-          <div class="placeholder">
-            <div>
-              <b>[贴图位置：规划路线地图截图]</b>
-              <span>建议截图包含不同颜色车辆路线、任务顺序编号和处理厂终点。</span>
-            </div>
+          <div class="media-frame">
+            <img src="images/page7.png" alt="规划路线地图局部截图" />
           </div>
         </article>
 
-        <article class="slide two-col" data-title="保障与演示">
+        <article class="slide two-col visual-heavy" data-title="保障与演示">
           <div>
             <p class="eyebrow">07 / 工程保障与演示价值</p>
             <h2>系统不仅能规划路线，还能解释和复现实验结果</h2>
             <div class="grid two">
               <div class="card">
                 <strong>可达性分析</strong>
-                <p>道路图先做连通性校验；分配前使用 `nx.has_path` 检查车辆、垃圾桶、处理厂之间是否可达。</p>
+                <p>分配前用 `nx.has_path` 检查车辆、垃圾桶、处理厂之间是否可达。</p>
               </div>
               <div class="card">
                 <strong>知识共享池</strong>
-                <p>保存 `fill_history`、`predictions`、`planning_records`，支持历史路线恢复和结果复盘。</p>
+                <p>保存 `fill_history`、`predictions`、`planning_records`，支持复盘。</p>
               </div>
               <div class="card">
                 <strong>测试覆盖</strong>
-                <p>后端测试覆盖类别约束、不可达任务、容量限制、高满溢优先级和 API 编排。</p>
+                <p>覆盖类别约束、不可达任务、容量限制、高满溢优先级和 API 编排。</p>
               </div>
               <div class="card">
                 <strong>课堂演示</strong>
-                <p>随机生成场景、推进时间、规划路线、查看历史记录，形成完整演示闭环。</p>
+                <p>生成场景、推进时间、规划路线、查看历史记录，形成演示闭环。</p>
               </div>
             </div>
           </div>
-          <div class="placeholder">
-            <div>
-              <b>[贴图位置：规划结果面板 / 历史记录截图]</b>
-              <span>建议放指标卡片和历史记录列表，突出可复现与可解释。</span>
-            </div>
+          <div class="media-frame contain">
+            <img src="images/page8.png" alt="规划历史记录页面截图" />
           </div>
         </article>
 
-        <article class="slide two-col" data-title="总结">
-          <div>
-            <p class="eyebrow">08 / 总结</p>
-            <h2>围绕路径规划完成了一个可演示的多智能体系统</h2>
-            <ul>
-              <li>用 LangGraph 将监测、知识、任务编排、可达性和车辆规划拆成清晰 Agent 流程。</li>
-              <li>用 NetworkX 把道路转为图，支持连通性检查和最短路径查询。</li>
-              <li>路径规划重点采用“约束分配 + 遗传算法排序”，兼顾满溢紧急度和行驶距离。</li>
-              <li>前端地图展示车辆路线、指标和历史记录，满足课程系统演示要求。</li>
-            </ul>
-            <div class="speaker">
-              结束语：本项目把垃圾分类收运从静态地图展示推进到可解释、可复现、可优化的调度系统。
-            </div>
-          </div>
-          <div class="flow-panel">
-            <h3>5 分钟汇报建议分配</h3>
-            <ol>
-              <li>背景目标：35 秒</li>
-              <li>架构与 Agent：75 秒</li>
-              <li>路径规划实现：150 秒</li>
-              <li>可视化、知识池、测试：55 秒</li>
-              <li>总结：25 秒</li>
-            </ol>
-            <div class="placeholder" style="min-height: 170px; margin-top: 18px">
-              <div>
-                <b>[贴图位置：最终演示合成图]</b>
-                <span>可放一张包含地图、路线指标、Agent trace 的综合截图。</span>
-              </div>
-            </div>
+        <article class="slide close" data-title="结束语">
+          <div class="closing">
+            <p class="eyebrow">08 / 结束语</p>
+            <h2>以上就是我们的汇报</h2>
+            <p class="lead">
+              绿运先锋把垃圾分类收运从静态地图展示推进到可解释、可复现、可优化的多智能体调度流程。
+              感谢聆听，欢迎老师和同学批评指正。
+            </p>
           </div>
         </article>
       </section>
 
       <footer class="footer">
-        <div class="count"><span id="slideIndex">1</span> / <span id="slideTotal">8</span></div>
+        <div class="count"><span id="slideIndex">1</span> / <span id="slideTotal">9</span></div>
         <div class="nav" aria-label="幻灯片导航">
           <button type="button" id="prevBtn" aria-label="上一页">‹</button>
           <button type="button" id="nextBtn" aria-label="下一页">›</button>

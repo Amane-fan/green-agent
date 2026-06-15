@@ -1,0 +1,1276 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SE2026-12 绿运先锋课程汇报</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef8ef;
+        --bg-2: #fbfff6;
+        --panel: rgba(255, 255, 249, 0.96);
+        --panel-soft: rgba(240, 248, 236, 0.9);
+        --ink: #142018;
+        --muted: #5a6b60;
+        --line: rgba(24, 91, 53, 0.15);
+        --green: #22a563;
+        --green-dark: #0f663a;
+        --mint: #b6ecd0;
+        --lime: #d7f36f;
+        --amber: #d68926;
+        --cyan: #56c9bd;
+        --paper: #fffef7;
+        --white: #ffffff;
+        --shadow: 0 24px 60px rgba(24, 91, 53, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        font-family:
+          "Source Han Serif SC",
+          "Noto Serif CJK SC",
+          "Songti SC",
+          "STSong",
+          serif;
+        background:
+          radial-gradient(circle at 8% 12%, rgba(34, 165, 99, 0.2), transparent 28%),
+          radial-gradient(circle at 88% 8%, rgba(86, 201, 189, 0.17), transparent 30%),
+          radial-gradient(circle at 70% 86%, rgba(215, 243, 111, 0.22), transparent 30%),
+          linear-gradient(140deg, var(--bg), var(--bg-2) 52%, #e7f3e8);
+        color: var(--ink);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.42;
+        background-image:
+          linear-gradient(rgba(24, 91, 53, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(24, 91, 53, 0.08) 1px, transparent 1px);
+        background-size: 42px 42px;
+        mask-image: radial-gradient(circle at center, #000 0%, transparent 74%);
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .deck {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: 64px 1fr 56px;
+        position: relative;
+      }
+
+      .topbar,
+      .footer {
+        width: min(1400px, calc(100vw - 40px));
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        z-index: 5;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        letter-spacing: 0.03em;
+      }
+
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(212, 255, 106, 0.38);
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 32% 24%, rgba(212, 255, 106, 0.95), rgba(49, 184, 107, 0.85) 36%, rgba(18, 98, 56, 0.86) 68%),
+          #163922;
+        color: #07110b;
+        font-weight: 900;
+        box-shadow: 0 0 30px rgba(49, 184, 107, 0.28);
+      }
+
+      .brand strong {
+        display: block;
+        font-size: 15px;
+      }
+
+      .brand span,
+      .hint,
+      .count {
+        color: #607266;
+        font-size: 13px;
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .progress {
+        width: min(30vw, 360px);
+        height: 9px;
+        padding: 2px;
+        border: 1px solid rgba(24, 91, 53, 0.16);
+        border-radius: 999px;
+        background: rgba(24, 91, 53, 0.08);
+      }
+
+      .progress span {
+        display: block;
+        width: 10%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--green), var(--lime));
+        box-shadow: 0 0 18px rgba(49, 184, 107, 0.5);
+        transition: width 180ms ease;
+      }
+
+      .stage {
+        position: relative;
+        width: min(1400px, calc(100vw - 40px));
+        height: min(780px, calc(100vh - 120px));
+        min-height: 0;
+        margin: 0 auto;
+      }
+
+      .slide {
+        position: absolute;
+        inset: 0;
+        display: none;
+        overflow: hidden auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        border: 1px solid rgba(24, 91, 53, 0.16);
+        border-radius: 26px;
+        box-shadow: var(--shadow);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 249, 0.98), rgba(239, 248, 237, 0.96)),
+          var(--panel);
+        color: var(--ink);
+      }
+
+      .slide.active {
+        display: grid;
+      }
+
+      .slide::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, rgba(34, 165, 99, 0.12), transparent 21%),
+          radial-gradient(circle at 93% 14%, rgba(34, 165, 99, 0.16), transparent 24%);
+      }
+
+      .slide-inner {
+        position: relative;
+        z-index: 1;
+        min-width: 0;
+        min-height: 0;
+        padding: clamp(26px, 3.1vw, 44px);
+        display: grid;
+        gap: 18px;
+      }
+
+      .hero .slide-inner {
+        grid-template-columns: 0.9fr 1.1fr;
+        align-items: center;
+        gap: 28px;
+      }
+
+      .two-col .slide-inner {
+        grid-template-columns: 0.92fr 1.08fr;
+        align-items: center;
+      }
+
+      .wide .slide-inner {
+        grid-template-rows: auto 1fr;
+      }
+
+      .kicker {
+        margin: 0 0 12px;
+        color: var(--green-dark);
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          "Microsoft YaHei",
+          sans-serif;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1,
+      h2 {
+        margin-bottom: 14px;
+        letter-spacing: -0.05em;
+      }
+
+      h1 {
+        font-size: clamp(52px, 6.4vw, 86px);
+        line-height: 0.95;
+      }
+
+      h2 {
+        max-width: 900px;
+        font-size: clamp(30px, 3.7vw, 50px);
+        line-height: 1.08;
+      }
+
+      h3 {
+        margin-bottom: 10px;
+        font-size: 22px;
+      }
+
+      .lead {
+        max-width: 800px;
+        color: #425146;
+        font-size: clamp(17px, 1.7vw, 22px);
+        line-height: 1.48;
+      }
+
+      .subtitle {
+        color: rgba(247, 242, 224, 0.74);
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .hero-panel {
+        position: relative;
+        min-height: 0;
+        height: min(52vh, 470px);
+        padding: 14px;
+        border-radius: 24px;
+        background:
+          linear-gradient(135deg, rgba(248, 255, 244, 0.96), rgba(218, 241, 225, 0.92)),
+          #f8fff4;
+        box-shadow: inset 0 0 0 1px rgba(24, 91, 53, 0.12);
+      }
+
+      .hero-panel img,
+      .image-card img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .hero-panel img {
+        border-radius: 18px;
+        opacity: 0.98;
+      }
+
+      .hero-panel::after {
+        content: "Green Agent";
+        position: absolute;
+        right: 22px;
+        bottom: 18px;
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 249, 0.84);
+        color: var(--green-dark);
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          sans-serif;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .meta,
+      .card,
+      .metric,
+      .note,
+      .pill {
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          "Microsoft YaHei",
+          sans-serif;
+      }
+
+      .meta {
+        padding: 12px 13px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid var(--line);
+      }
+
+      .meta b {
+        display: block;
+        color: var(--green-dark);
+        font-size: 24px;
+        line-height: 1;
+      }
+
+      .meta span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 18px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        padding: 7px 12px;
+        border: 1px solid rgba(18, 98, 56, 0.18);
+        border-radius: 999px;
+        background: rgba(18, 98, 56, 0.08);
+        color: #23432d;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid.four {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .card {
+        position: relative;
+        min-height: 120px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 249, 237, 0.88)),
+          var(--white);
+      }
+
+      .card.emph {
+        background:
+          radial-gradient(circle at 14% 12%, rgba(212, 255, 106, 0.34), transparent 42%),
+          linear-gradient(135deg, #123c22, #092116);
+        color: var(--paper);
+        border-color: rgba(212, 255, 106, 0.22);
+      }
+
+      .card small {
+        display: inline-flex;
+        margin-bottom: 10px;
+        color: var(--green-dark);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .card.emph small {
+        color: var(--lime);
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 19px;
+      }
+
+      .card p,
+      .card li,
+      .note,
+      .mini,
+      .timeline p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.48;
+      }
+
+      .card.emph p,
+      .card.emph li {
+        color: rgba(247, 242, 224, 0.78);
+      }
+
+      ul,
+      ol {
+        margin: 0;
+        padding-left: 1.2em;
+      }
+
+      li + li {
+        margin-top: 8px;
+      }
+
+      .architecture {
+        display: grid;
+        gap: 9px;
+      }
+
+      .lane {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.78);
+      }
+
+      .lane b {
+        display: grid;
+        place-items: center;
+        min-height: 58px;
+        padding: 10px;
+        background: rgba(18, 98, 56, 0.1);
+        color: var(--green-dark);
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          sans-serif;
+        font-size: 15px;
+      }
+
+      .lane span {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        color: #3c4e42;
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          sans-serif;
+        line-height: 1.42;
+        font-size: 14px;
+      }
+
+      .agent-flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .agent {
+        min-height: 150px;
+        padding: 15px 13px;
+        border-radius: 21px;
+        border: 1px solid rgba(18, 98, 56, 0.18);
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      .agent .num {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        margin-bottom: 10px;
+        border-radius: 50%;
+        background: var(--green-dark);
+        color: var(--lime);
+        font-weight: 900;
+      }
+
+      .agent b {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 17px;
+      }
+
+      .agent p {
+        margin: 0;
+        color: var(--muted);
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          sans-serif;
+        font-size: 13px;
+        line-height: 1.42;
+      }
+
+      .formula {
+        display: grid;
+        gap: 10px;
+      }
+
+      code,
+      .codebox {
+        font-family:
+          "SFMono-Regular",
+          "Cascadia Mono",
+          Consolas,
+          monospace;
+      }
+
+      .codebox {
+        display: block;
+        padding: 13px 15px;
+        overflow: auto;
+        border: 1px solid rgba(18, 98, 56, 0.18);
+        border-radius: 18px;
+        background: #f7fbf1;
+        color: #183d27;
+        font-size: 13px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+
+      .image-card {
+        min-height: 0;
+        height: min(52vh, 450px);
+        overflow: hidden;
+        border: 10px solid #ffffff;
+        border-radius: 24px;
+        background: #ffffff;
+        box-shadow: 0 18px 44px rgba(24, 91, 53, 0.16);
+      }
+
+      .image-card.contain img {
+        object-fit: contain;
+        background: #f8f5e7;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .metric {
+        padding: 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(18, 98, 56, 0.14);
+        background: rgba(18, 98, 56, 0.09);
+      }
+
+      .metric b {
+        display: block;
+        color: var(--green-dark);
+        font-size: 29px;
+        line-height: 1;
+      }
+
+      .metric span {
+        display: block;
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .timeline {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 8%;
+        right: 8%;
+        top: 30px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--green-dark), rgba(18, 98, 56, 0.1));
+      }
+
+      .step {
+        position: relative;
+        padding: 48px 14px 14px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.76);
+      }
+
+      .step::before {
+        content: attr(data-step);
+        position: absolute;
+        top: 14px;
+        left: 16px;
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--green-dark);
+        color: var(--lime);
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          sans-serif;
+        font-weight: 900;
+      }
+
+      .step strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 17px;
+      }
+
+      .speaker {
+        padding: 12px 15px;
+        border-left: 5px solid var(--green-dark);
+        border-radius: 0 18px 18px 0;
+        background: rgba(18, 98, 56, 0.09);
+        color: #3c4e42;
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          sans-serif;
+        font-size: 13px;
+        line-height: 1.48;
+      }
+
+      .quote {
+        margin: 0;
+        padding: 20px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #e8f8e6, #ffffff);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        font-size: clamp(22px, 2.5vw, 34px);
+        line-height: 1.26;
+      }
+
+      .quote strong {
+        color: var(--lime);
+      }
+
+      .closing {
+        place-items: center;
+        text-align: center;
+      }
+
+      .closing .slide-inner {
+        place-items: center;
+      }
+
+      .closing h2 {
+        max-width: 960px;
+      }
+
+      .footer {
+        color: #607266;
+      }
+
+      .nav {
+        display: flex;
+        gap: 10px;
+      }
+
+      .nav button {
+        width: 44px;
+        height: 38px;
+        border: 1px solid rgba(24, 91, 53, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--green-dark);
+        cursor: pointer;
+      }
+
+      .nav button:hover {
+        border-color: rgba(15, 102, 58, 0.5);
+        color: var(--green-dark);
+      }
+
+      .slide-number {
+        position: absolute;
+        right: 38px;
+        bottom: 28px;
+        z-index: 2;
+        color: rgba(23, 35, 26, 0.16);
+        font-family:
+          "Noto Sans CJK SC",
+          "PingFang SC",
+          sans-serif;
+        font-size: 68px;
+        font-weight: 900;
+        letter-spacing: -0.08em;
+      }
+
+      @media (max-width: 980px) {
+        html,
+        body {
+          overflow: auto;
+        }
+
+        .deck {
+          grid-template-rows: auto 1fr auto;
+          gap: 12px;
+          padding: 12px 0;
+        }
+
+        .topbar,
+        .footer,
+        .stage {
+          width: min(100vw - 24px, 760px);
+        }
+
+        .stage {
+          height: auto;
+          min-height: 0;
+        }
+
+        .slide,
+        .slide.active {
+          position: relative;
+          min-height: min(760px, calc(100vh - 96px));
+        }
+
+        .hero .slide-inner,
+        .two-col .slide-inner {
+          grid-template-columns: 1fr;
+        }
+
+        .grid,
+        .grid.two,
+        .grid.four,
+        .meta-grid,
+        .agent-flow,
+        .timeline,
+        .metric-row {
+          grid-template-columns: 1fr;
+        }
+
+        .progress,
+        .hint {
+          display: none;
+        }
+      }
+
+      @media (max-height: 720px) and (min-width: 981px) {
+        .deck {
+          grid-template-rows: 54px 1fr 48px;
+        }
+
+        .topbar,
+        .footer {
+          width: min(1360px, calc(100vw - 32px));
+        }
+
+        .stage {
+          width: min(1360px, calc(100vw - 32px));
+          height: calc(100vh - 102px);
+        }
+
+        .slide-inner {
+          padding: clamp(20px, 2.4vw, 34px);
+          gap: 12px;
+        }
+
+        h1 {
+          font-size: clamp(46px, 5.6vw, 72px);
+        }
+
+        h2 {
+          font-size: clamp(27px, 3vw, 41px);
+          margin-bottom: 10px;
+        }
+
+        .lead {
+          font-size: clamp(16px, 1.4vw, 19px);
+          line-height: 1.42;
+        }
+
+        .hero-panel,
+        .image-card {
+          height: min(45vh, 360px);
+        }
+
+        .card {
+          min-height: 102px;
+          padding: 13px;
+        }
+
+        .card strong {
+          font-size: 18px;
+        }
+
+        .agent {
+          min-height: 132px;
+          padding: 12px;
+        }
+
+        .agent .num {
+          width: 30px;
+          height: 30px;
+          margin-bottom: 8px;
+        }
+
+        .metric {
+          padding: 12px;
+        }
+
+        .metric b {
+          font-size: 25px;
+        }
+
+        .step {
+          padding: 43px 12px 12px;
+        }
+
+        .codebox {
+          padding: 11px 13px;
+          font-size: 12.5px;
+          line-height: 1.38;
+        }
+
+        .slide-number {
+          right: 28px;
+          bottom: 18px;
+          font-size: 54px;
+        }
+      }
+
+      @media print {
+        html,
+        body {
+          overflow: visible;
+          background: #fff;
+        }
+
+        body::before,
+        .topbar,
+        .footer {
+          display: none;
+        }
+
+        .deck {
+          display: block;
+        }
+
+        .stage {
+          width: auto;
+          height: auto;
+        }
+
+        .slide,
+        .slide.active {
+          position: relative;
+          display: grid !important;
+          min-height: 100vh;
+          margin: 0;
+          border-radius: 0;
+          box-shadow: none;
+          break-after: page;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">G</div>
+          <div>
+            <strong>SE2026-12 绿运先锋</strong>
+            <span>垃圾分类收运多智能体路径优化系统</span>
+          </div>
+        </div>
+        <div class="status">
+          <span class="hint">建议汇报时长：约 5 分钟 · 使用方向键翻页</span>
+          <div class="progress" aria-label="汇报进度"><span id="progressBar"></span></div>
+        </div>
+      </header>
+
+      <section class="stage" aria-live="polite">
+        <article class="slide hero active" data-title="封面">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">Software Engineering Course Project</p>
+              <h1>绿运先锋</h1>
+              <p class="lead">
+                一个面向城市垃圾分类收运场景的实验系统：把垃圾桶、车辆、处理厂和道路抽象为图，
+                通过多智能体编排与路径优化生成可解释、可复现的收运方案。
+              </p>
+              <div class="chips">
+                <span class="pill">FastAPI + LangGraph</span>
+                <span class="pill">React + Leaflet</span>
+                <span class="pill">NetworkX 最短路</span>
+                <span class="pill">遗传算法排序</span>
+                <span class="pill">规划历史与 AI 助手</span>
+              </div>
+              <div class="meta-grid" aria-label="项目摘要">
+                <div class="meta"><b>30</b><span>默认垃圾桶点位</span></div>
+                <div class="meta"><b>5</b><span>默认收运车辆</span></div>
+                <div class="meta"><b>3</b><span>默认处理厂</span></div>
+                <div class="meta"><b>70%</b><span>默认收运阈值</span></div>
+              </div>
+            </div>
+            <div class="hero-panel">
+              <img src="images/page1.png" alt="绿运先锋系统首页截图" />
+            </div>
+          </div>
+          <div class="slide-number">01</div>
+        </article>
+
+        <article class="slide two-col" data-title="问题背景">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">01 / Problem</p>
+              <h2>分类收运不是普通最短路，而是动态多约束调度</h2>
+              <p class="lead">
+                垃圾桶满溢率会随时间变化，车辆和处理厂又存在垃圾类别、容量和道路可达性约束。
+                如果只按最近距离收运，容易出现高满溢点位延迟、车辆混收或终点不可处理的问题。
+              </p>
+              <div class="speaker">
+                汇报重点：我们把问题定义成“先判断哪些点该收，再判断谁能收，最后优化怎么走”。
+              </div>
+            </div>
+            <div class="grid">
+              <div class="card emph">
+                <small>约束一</small>
+                <strong>分类匹配</strong>
+                <p>垃圾桶、车辆、处理厂必须类别兼容，系统显式拒绝混收和错误处理终点。</p>
+              </div>
+              <div class="card">
+                <small>约束二</small>
+                <strong>动态满溢</strong>
+                <p>不仅看当前 fill_rate，还预测未来 3 个时间步，提前纳入即将超阈值点位。</p>
+              </div>
+              <div class="card">
+                <small>约束三</small>
+                <strong>图可达性</strong>
+                <p>分配前检查车辆到垃圾桶、垃圾桶到处理厂是否有路径，避免生成不可执行方案。</p>
+              </div>
+            </div>
+          </div>
+          <div class="slide-number">02</div>
+        </article>
+
+        <article class="slide wide" data-title="项目交付">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">02 / Deliverable</p>
+              <h2>最终交付的是一套可运行、可演示、可复盘的工程闭环</h2>
+            </div>
+            <div class="timeline">
+              <div class="step" data-step="1">
+                <strong>建模</strong>
+                <p>随机生成或手动编辑垃圾桶、车辆、处理厂和道路边，形成可验证的场景图。</p>
+              </div>
+              <div class="step" data-step="2">
+                <strong>模拟</strong>
+                <p>推进时间并记录 fill_history，计算未来满溢预测，筛选待收运任务。</p>
+              </div>
+              <div class="step" data-step="3">
+                <strong>规划</strong>
+                <p>通过 Agent 流程完成任务编排、可达性分析、车辆分配和单车路径排序。</p>
+              </div>
+              <div class="step" data-step="4">
+                <strong>复盘</strong>
+                <p>保存规划记录，支持命名、查看、恢复，并可用 AI 助手解释路线差异。</p>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric"><b>React 19</b><span>地图交互、路线高亮、历史记录面板</span></div>
+              <div class="metric"><b>FastAPI</b><span>场景、模拟、规划、AI 助手 API</span></div>
+              <div class="metric"><b>SQLite / MySQL</b><span>本地演示与持久化部署两种模式</span></div>
+            </div>
+          </div>
+          <div class="slide-number">03</div>
+        </article>
+
+        <article class="slide two-col" data-title="系统架构">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">03 / Architecture</p>
+              <h2>前端负责可视化，后端负责领域决策，知识池负责状态沉淀</h2>
+              <div class="architecture" aria-label="系统架构分层">
+                <div class="lane"><b>前端层</b><span>React、TypeScript、React Leaflet：地图点位、道路边、车辆路线、历史记录和 AI 聊天界面。</span></div>
+                <div class="lane"><b>接口层</b><span>FastAPI：提供 `/api/scenarios`、`/api/simulation`、`/api/planning`、`/api/planning-records`、`/api/ai-assistant`。</span></div>
+                <div class="lane"><b>编排层</b><span>LangGraph：将规划拆成 monitoring、knowledge、task_orchestrator、reachability、vehicle_facility。</span></div>
+                <div class="lane"><b>算法层</b><span>NetworkX 最短路 + 约束过滤 + 遗传算法，输出车辆任务顺序和完整 path_node_ids。</span></div>
+                <div class="lane"><b>数据层</b><span>KnowledgePool：保存场景、满溢历史、预测结果、事件和规划快照。</span></div>
+              </div>
+            </div>
+            <div class="image-card contain">
+              <img src="images/page3.png" alt="绿运先锋系统架构图" />
+            </div>
+          </div>
+          <div class="slide-number">04</div>
+        </article>
+
+        <article class="slide wide" data-title="Agent 编排">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">04 / Multi-Agent Workflow</p>
+              <h2>LangGraph 把一次路线规划拆成 5 个可追踪节点</h2>
+              <p class="lead">
+                每个节点只处理一个清晰职责，并向 trace 写入解释信息。前端和 AI 助手可以基于 trace 回答“为什么这样规划”。
+              </p>
+            </div>
+            <div class="agent-flow">
+              <div class="agent">
+                <span class="num">1</span>
+                <b>Monitoring</b>
+                <p>计算 horizon=3 的满溢预测，找出当前或未来超过阈值的垃圾桶。</p>
+              </div>
+              <div class="agent">
+                <span class="num">2</span>
+                <b>Knowledge</b>
+                <p>加载当前场景与预测上下文，让后续节点共享同一份事实基础。</p>
+              </div>
+              <div class="agent">
+                <span class="num">3</span>
+                <b>Task Orchestrator</b>
+                <p>按垃圾类别组织待收运任务，为车辆能力匹配做准备。</p>
+              </div>
+              <div class="agent">
+                <span class="num">4</span>
+                <b>Reachability</b>
+                <p>基于道路图准备可达性分析，避免不可执行路线进入结果。</p>
+              </div>
+              <div class="agent">
+                <span class="num">5</span>
+                <b>Vehicle Facility</b>
+                <p>完成车辆分配、路径排序、处理厂选择，并生成最终 PlanningResult。</p>
+              </div>
+            </div>
+            <pre class="codebox">workflow: START → monitoring → knowledge → task_orchestrator → reachability → vehicle_facility → END</pre>
+          </div>
+          <div class="slide-number">05</div>
+        </article>
+
+        <article class="slide two-col" data-title="算法策略">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">05 / Route Planning</p>
+              <h2>路线规划分三步：筛选任务、分配车辆、优化单车顺序</h2>
+              <ol class="lead">
+                <li>先用阈值与预测结果确定待收运垃圾桶。</li>
+                <li>再按类别、可达性、剩余容量筛选候选车辆。</li>
+                <li>每辆车的多个任务用遗传算法排序，高满溢点位获得更高访问优先级。</li>
+              </ol>
+              <div class="speaker">
+                这里体现软件工程价值：算法不是孤立函数，而是和领域模型、图验证、API、前端解释共同组成闭环。
+              </div>
+            </div>
+            <div class="formula">
+              <pre class="codebox">候选车辆条件：
+vehicle.supported_waste_type == bin.waste_type
+has_path(vehicle.node_id, bin.id)
+has_path(bin.id, compatible_facility.node_id)
+remaining_capacity >= bin.capacity * fill_rate / 100</pre>
+              <pre class="codebox">单车排序评分：
+fitness = route_distance + delay_penalty * 0.01
+delay_penalty = Σ((visit_order + 1) * fill_rate)</pre>
+              <div class="grid two">
+                <div class="card"><strong>遗传算法参数</strong><p>24 个初始个体，35 代迭代，每代保留 8 个父代并生成 16 个子代。</p></div>
+                <div class="card"><strong>结果指标</strong><p>输出 distance、estimated_fuel、estimated_carbon，并保留未分配原因。</p></div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-number">06</div>
+        </article>
+
+        <article class="slide two-col" data-title="遗传算法实现">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">06 / Genetic Algorithm</p>
+              <h2>遗传算法负责优化单车收运顺序</h2>
+              <p class="lead">
+                当某辆车分配到多个垃圾桶时，系统不直接按距离贪心走完，而是把收运顺序作为染色体，
+                在类别、容量、可达性已经满足的前提下搜索更短路线，并让高满溢垃圾桶更早被访问。
+              </p>
+              <pre class="codebox">population = [greedy_order] + 23 random_orders
+for generation in range(35):
+    survivors = best_8_by_fitness(population)
+    children = crossover_and_mutate(survivors, count=16)
+    population = survivors + children</pre>
+              <div class="metric-row">
+                <div class="metric"><b>24</b><span>初始个体：1 个贪心序列 + 23 个随机序列</span></div>
+                <div class="metric"><b>35</b><span>迭代代数，持续保留更优访问顺序</span></div>
+                <div class="metric"><b>0.25</b><span>变异概率，两点交换避免陷入局部最优</span></div>
+              </div>
+              <div class="speaker">
+                讲述重点：适应度函数不是只看距离，而是 `route_distance + delay_penalty × 0.01`，
+                因此高满溢点位越晚访问，惩罚越高。
+              </div>
+            </div>
+            <div class="image-card contain">
+              <img src="images/page6.png" alt="遗传算法优化单车收运顺序示意图" />
+            </div>
+          </div>
+          <div class="slide-number">07</div>
+        </article>
+
+        <article class="slide two-col" data-title="数据闭环">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">07 / Knowledge Pool</p>
+              <h2>规划历史让实验结果可以复现、比较和解释</h2>
+              <p class="lead">
+                每次规划会保存场景快照和规划结果，而不是只保存指标。恢复历史记录时，地图、路线、
+                AI 上下文都会回到当时状态，便于课堂演示和策略对比。
+              </p>
+              <div class="grid two">
+                <div class="card"><strong>可复现</strong><p>保存 seed、threshold、scenario_snapshot、planning_result。</p></div>
+                <div class="card"><strong>可追溯</strong><p>保存 fill_history、predictions、events 和 agent trace。</p></div>
+                <div class="card"><strong>可部署</strong><p>默认 SQLite fallback，配置后可切换 MySQL 8.4。</p></div>
+                <div class="card"><strong>可解释</strong><p>AI 助手读取完整规划上下文，回答路线差异和未分配原因。</p></div>
+              </div>
+            </div>
+            <div class="image-card contain">
+              <img src="images/page8.png" alt="规划历史记录截图" />
+            </div>
+          </div>
+          <div class="slide-number">08</div>
+        </article>
+
+        <article class="slide wide" data-title="工程质量">
+          <div class="slide-inner">
+            <div>
+              <p class="kicker">08 / Engineering Quality</p>
+              <h2>测试覆盖集中在容易出错的业务边界</h2>
+            </div>
+            <div class="grid four">
+              <div class="card emph">
+                <small>后端模型</small>
+                <strong>Pydantic 约束</strong>
+                <p>验证场景、车辆、处理厂、规划记录和 AI 请求的数据结构。</p>
+              </div>
+              <div class="card">
+                <small>规划算法</small>
+                <strong>边界用例</strong>
+                <p>覆盖类别约束、不可达点位、容量不足、高满溢优先级和指标计算。</p>
+              </div>
+              <div class="card">
+                <small>API 编排</small>
+                <strong>端到端流程</strong>
+                <p>覆盖随机场景、推进时间、规划路线、保存历史、恢复记录和无效图拒绝。</p>
+              </div>
+              <div class="card">
+                <small>前端交互</small>
+                <strong>可视化回归</strong>
+                <p>覆盖路线卡片、选中高亮、历史面板、AI 流式消息和亮色主题可读性。</p>
+              </div>
+            </div>
+            <pre class="codebox">验证命令：
+make test-backend
+make test-frontend
+make build-frontend
+
+目标：算法结果正确，API 状态可恢复，页面演示稳定。</pre>
+          </div>
+          <div class="slide-number">09</div>
+        </article>
+
+        <article class="slide closing" data-title="总结">
+          <div class="slide-inner">
+            <p class="kicker">09 / Conclusion</p>
+            <h2>绿运先锋把“路径规划算法”做成了一个完整软件系统</h2>
+            <p class="lead">
+              我们完成了场景建模、动态模拟、Agent 编排、约束路径优化、地图可视化、规划历史、
+              AI 解释助手和测试验证。后续可以继续加入真实路网、时间窗约束和多目标优化权重配置。
+            </p>
+            <blockquote class="quote">
+              核心价值：从 <strong>能算路线</strong> 升级到 <strong>能解释、能复现、能演示、能迭代</strong>。
+            </blockquote>
+            <div class="chips">
+              <span class="pill">谢谢老师和同学</span>
+              <span class="pill">欢迎批评指正</span>
+            </div>
+          </div>
+          <div class="slide-number">10</div>
+        </article>
+      </section>
+
+      <footer class="footer">
+        <div class="count">
+          <span id="slideIndex">1</span> / <span id="slideTotal">10</span>
+          <span id="slideTitle">封面</span>
+        </div>
+        <div class="nav" aria-label="幻灯片导航">
+          <button type="button" id="prevBtn" aria-label="上一页">‹</button>
+          <button type="button" id="nextBtn" aria-label="下一页">›</button>
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const slideIndex = document.getElementById("slideIndex");
+      const slideTotal = document.getElementById("slideTotal");
+      const slideTitle = document.getElementById("slideTitle");
+      const progressBar = document.getElementById("progressBar");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      let current = 0;
+
+      function showSlide(index) {
+        current = Math.max(0, Math.min(slides.length - 1, index));
+        slides.forEach((slide, position) => {
+          slide.classList.toggle("active", position === current);
+        });
+        slideIndex.textContent = String(current + 1);
+        slideTotal.textContent = String(slides.length);
+        slideTitle.textContent = slides[current].dataset.title || "";
+        progressBar.style.width = `${((current + 1) / slides.length) * 100}%`;
+        document.title = `${current + 1}/${slides.length} ${slides[current].dataset.title} - SE2026-12 绿运先锋课程汇报`;
+      }
+
+      prevBtn.addEventListener("click", () => showSlide(current - 1));
+      nextBtn.addEventListener("click", () => showSlide(current + 1));
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+          event.preventDefault();
+          showSlide(current + 1);
+        }
+        if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          showSlide(current - 1);
+        }
+        if (event.key === "Home") {
+          showSlide(0);
+        }
+        if (event.key === "End") {
+          showSlide(slides.length - 1);
+        }
+      });
+
+      showSlide(0);
+    </script>
+  </body>
+</html>
