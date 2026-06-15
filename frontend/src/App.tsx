@@ -822,7 +822,7 @@ export default function App() {
               <Polyline
                 key={`${edge.source}-${edge.target}`}
                 positions={edgePositions(scenario, edge)}
-                pathOptions={{ className: 'graph-edge', color: '#334155', weight: 3, opacity: 0.85 }}
+                pathOptions={{ className: 'graph-edge', color: '#64748b', weight: 3, opacity: 0.85 }}
               >
                 <Popup>长度: {edge.weight.toFixed(2)} km</Popup>
               </Polyline>

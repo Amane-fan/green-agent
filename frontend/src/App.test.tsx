@@ -428,7 +428,7 @@ describe('App', () => {
     const graphEdge = screen.getAllByTestId('graph-polyline')[0];
 
     expect(graphEdge).toHaveAttribute('data-class-name', 'graph-edge');
-    expect(graphEdge).toHaveAttribute('data-color', '#334155');
+    expect(graphEdge).toHaveAttribute('data-color', '#64748b');
     expect(graphEdge).toHaveAttribute('data-weight', '3');
     expect(graphEdge).toHaveAttribute('data-opacity', '0.85');
     expect(graphEdge).not.toHaveAttribute('data-dash-array');
